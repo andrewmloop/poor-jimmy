@@ -1,6 +1,5 @@
 import {
   AudioPlayer,
-  createAudioPlayer,
   createAudioResource,
   joinVoiceChannel,
   StreamType,
@@ -55,28 +54,22 @@ export const play = {
         adapterCreator: member.guild.voiceAdapterCreator,
       });
 
-      connection.on(VoiceConnectionStatus.Connecting, console.log);
-      connection.on(VoiceConnectionStatus.Destroyed, console.log);
-      connection.on(VoiceConnectionStatus.Disconnected, console.log);
-      connection.on(VoiceConnectionStatus.Ready, console.log);
-      connection.on(VoiceConnectionStatus.Signalling, console.log);
-
       connection.subscribe(player);
-      player.play(
-        createAudioResource(await ytdl(url), {
-          inputType: StreamType.Opus,
+      const track = createAudioResource(
+        await ytdl(url, {
+          filter: "audioonly",
+          dlChunkSize: 0,
         }),
+        { inputType: StreamType.Opus },
       );
-      setTimeout(() => {
-        connection.rejoin();
-        console.log(connection.rejoinAttempts);
-      }, 70_000);
 
-      //   const track = createAudioResource(await ytdl(url), {
-      //     inputType: StreamType.Opus,
-      //   });
+      if (!track)
+        interaction.reply({
+          content: "No track could be found!",
+          ephemeral: true,
+        });
 
-      //   player.play(track);
+      player.play(track);
     } catch (error) {
       console.log(error);
       interaction.followUp(

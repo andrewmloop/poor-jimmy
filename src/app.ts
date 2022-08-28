@@ -1,5 +1,5 @@
 import "dotenv/config";
-import { Client, GatewayIntentBits, Collection, Partials } from "discord.js";
+import { Client, GatewayIntentBits, Collection } from "discord.js";
 import commands from "./commands";
 import { AudioPlayerStatus, createAudioPlayer } from "@discordjs/voice";
 import getErrorMessage from "./utils/getErrorMessage";
@@ -15,16 +15,13 @@ const client = new Client({
   ],
 });
 
-//client.on("debug", console.log);
-client.rest.on("rateLimited", console.log);
-
-const player = createAudioPlayer();
-
 // Dynamically update commands on the client
 client.commands = new Collection();
 for (let command of commands) {
   client.commands.set(command.data.name, command);
 }
+
+const player = createAudioPlayer();
 
 ////////////////
 // Client Events
@@ -52,9 +49,9 @@ client.on("interactionCreate", async (interaction) => {
   }
 });
 
-// ////////////////
-// // Player events
-// ////////////////
+//////////////////
+//// Player events
+//////////////////
 player.on("error", (error) => {
   console.log(getErrorMessage(error));
 });
@@ -62,13 +59,5 @@ player.on("error", (error) => {
 player.on(AudioPlayerStatus.Playing, (oldState, newState) => {
   console.log(`Now playing ${newState.resource.metadata}`);
 });
-
-player.on("stateChange", (oldState, newState) => {
-  console.log(
-    `Player state has changed from ${oldState.status} to ${newState.status}`,
-  );
-});
-
-// //player.on("debug", console.log);
 
 client.login(TOKEN);
