@@ -6,7 +6,8 @@
   "scripts": {
     "start": "node ./build/app.js",
     "build": "tsc --build",
-    "watch": "tsc --watch"
+    "watch": "tsc --watch",
+    "deploy-commands": "node ./build/deploy.js"
   },
   "author": "Andrew Loop",
   "license": "MIT",
