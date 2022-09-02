@@ -1,30 +1,31 @@
-import { AudioPlayer } from "@discordjs/voice";
+import { AudioPlayer, AudioPlayerStatus, entersState } from "@discordjs/voice";
 import { CommandInteraction, SlashCommandBuilder } from "discord.js";
-import getErrorMessage from "../utils/getErrorMessage";
+import { Command } from "../utils/Command";
 
-export const pause = {
-  isPlayer: true,
+export default class Pause extends Command {
+  name = "pause";
+  description = "Pauses the current track";
 
-  data: new SlashCommandBuilder()
-    .setName("pause")
-    .setDescription("Pause the currently playing track"),
+  data = new SlashCommandBuilder()
+    .setName(this.name)
+    .setDescription(this.description);
 
-  async execute(interaction: CommandInteraction, player: AudioPlayer) {
-    try {
-      const isPaused = player.pause();
-      if (isPaused) {
-        interaction.reply("Track has been paused!");
-      } else {
-        interaction.reply({
-          content: "Could not pause track!",
-          ephemeral: true,
-        });
+  execute = async (interaction: CommandInteraction): Promise<void> => {
+    const guildId = interaction.guildId as string;
+    const serverQueue = this.client.queueMap.get(guildId);
+    const player = serverQueue?.player as AudioPlayer;
+
+    if (serverQueue?.isPlaying) {
+      player.pause();
+
+      try {
+        await entersState(player, AudioPlayerStatus.Paused, 5_000);
+      } catch (error) {
+        console.log(error);
+        return;
       }
-    } catch (error) {
-      console.log(error);
-      await interaction.followUp(
-        `Error executing command: ${getErrorMessage(error)}`,
-      );
+
+      serverQueue.isPlaying = false;
     }
-  },
-};
+  };
+}

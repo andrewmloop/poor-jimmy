@@ -1,9 +1,8 @@
-import { nowPlaying } from "./now-playing";
-import { pause } from "./pause";
-import { ping } from "./ping";
-import { play } from "./play";
-import { resume } from "./resume";
+import list from "./list";
+import nowplaying from "./nowplaying";
+import pause from "./pause";
+import ping from "./ping";
+import play from "./play";
+import resume from "./resume";
 
-const commands = [nowPlaying, pause, ping, play, resume];
-
-export default commands;
+export const commandIndex = [list, nowplaying, pause, ping, play, resume];
