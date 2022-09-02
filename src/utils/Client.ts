@@ -57,7 +57,7 @@ export class Client extends DiscordClient {
           command?.execute(interaction);
         } catch (error) {
           console.log(error);
-          interaction.channel?.send(`Error executing command: ${error}`);
+          interaction.followUp(`Error executing command: ${error}`);
         }
       },
     );
