@@ -97,10 +97,11 @@ export default class Play extends Command {
     );
 
     if (!serverQueue.isPlaying) {
-      this.playTrack(guild.id, this.client.queueMap);
+      await this.playTrack(guild.id, this.client.queueMap);
+      return this.getNowPlayingMessage(serverQueue);
     }
 
-    return this.getNowPlayingMessage(serverQueue);
+    return `${track.title} added to the queue!`;
   }
 
   private async getTrackInfo(url: string): Promise<ytdl.videoInfo> {
@@ -265,6 +266,6 @@ export default class Play extends Command {
     const track = serverQueue.tracks[0];
     const link = this.getFormattedLink(track);
 
-    return `Now playing ${track.title}[${link}]`;
+    return `Now playing:\n${link}`;
   }
 }
