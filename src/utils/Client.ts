@@ -25,6 +25,7 @@ export class Client extends DiscordClient {
         GatewayIntentBits.Guilds,
         GatewayIntentBits.GuildVoiceStates,
         GatewayIntentBits.GuildMessages,
+        GatewayIntentBits.MessageContent,
       ],
     });
     this.commands = new Collection();
@@ -35,7 +36,7 @@ export class Client extends DiscordClient {
     // Load all commands
     for (let command of commandIndex) {
       const commandObject = new command(this);
-      this.commands.set(command.name, commandObject);
+      this.commands.set(commandObject.name, commandObject);
     }
 
     this.deployCommands(this.commands, this.token);
@@ -49,8 +50,7 @@ export class Client extends DiscordClient {
     this.addListener(
       Events.InteractionCreate,
       async (interaction: CommandInteraction) => {
-        if (interaction.isChatInputCommand()) return;
-
+        if (!interaction.isCommand()) return;
         try {
           const command = this.commands.get(interaction.commandName);
 
