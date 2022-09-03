@@ -24,7 +24,12 @@ export default class List extends Command {
     let list = "Queue:\n";
     const titles = tracks.map((track) => track.title);
     titles.forEach((title, index) => {
-      list = list + `#` + index + ": " + title + "\n";
+      /* 
+      Exclude the first element of the list because this is the track that is playing. We want to give proper indexes for /remove to use with. Using /remove on track that is currently playing causes playback issues. This seems like the cleanest way to handle it.
+      */
+      if (index !== 0) {
+        list = list + `#` + index + ": " + title + "\n";
+      }
     });
 
     await interaction.editReply(list);
