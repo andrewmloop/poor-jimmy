@@ -21,16 +21,19 @@ export default class Remove extends Command {
     const guildId = interaction.guildId as string;
     const serverQueue = this.client.queueMap.get(guildId);
 
+    await interaction.deferReply();
+
     const tracks = serverQueue?.tracks;
     const index = interaction.options.get("index")?.value as number;
 
-    if (!tracks || !index || index < 0 || index > tracks?.length) {
-      interaction.reply("Choose an index in range!");
+    // Don't allow index of 0, we want to use /skip to remove the current track
+    if (!tracks || !index || index < 1 || index > tracks?.length) {
+      interaction.editReply("Choose an index in range!");
       return;
     }
 
     const removedSong = tracks.splice(index, 1)[0];
 
-    interaction.reply(`Removed track: ${removedSong.title}`);
+    interaction.editReply(`Removed track: ${removedSong.title}`);
   };
 }
