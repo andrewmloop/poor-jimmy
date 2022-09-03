@@ -17,11 +17,14 @@ export abstract class Command {
     if (seconds === 0) return "livestream";
 
     const date = new Date(seconds * 1000).toISOString();
-    return seconds < 3600 ? date.substring(14, 5) : date.substring(11, 8);
+    const formatted =
+      seconds < 3600 ? date.substring(14, 19) : date.substring(12, 19);
+
+    return `[${formatted}]`;
   }
 
   protected getFormattedLink(track: Track): string {
-    return `[${track.title}] ${track.url}`;
+    return `${track.title}\n(${track.url})`;
   }
 
   protected getErrorMessage(error: unknown): string {
