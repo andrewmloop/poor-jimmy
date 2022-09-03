@@ -47,6 +47,8 @@ export default class Skip extends Command {
     const resource = createAudioResource(stream, {
       inputType: StreamType.Arbitrary,
     });
+    player.stop();
+    await entersState(player, AudioPlayerStatus.Idle, 5_000);
     player.play(resource);
     await entersState(player, AudioPlayerStatus.Playing, 5_000);
   }
