@@ -17,17 +17,16 @@ export default class List extends Command {
     const tracks = serverQueue?.tracks;
 
     if (!tracks) {
-      interaction.reply("There are no tracks queued!");
+      interaction.editReply("There are no tracks queued!");
       return;
     }
 
+    let list = "Queue:\n";
     const titles = tracks.map((track) => track.title);
-    let list = "";
+    titles.forEach((title, index) => {
+      list = list + `#` + index + ": " + title + "\n";
+    });
 
-    for (let title in titles) {
-      list = list + title + "\n";
-    }
-
-    await interaction.reply(list);
+    await interaction.editReply(list);
   };
 }
