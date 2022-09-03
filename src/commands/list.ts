@@ -13,7 +13,7 @@ export default class List extends Command {
     await interaction.deferReply();
 
     const guildId = interaction.guildId as string;
-    const serverQueue = this.client.queueMap.get(guildId);
+    const serverQueue = this.client.activeQueueMap.get(guildId);
     const tracks = serverQueue?.tracks;
 
     if (!tracks) {

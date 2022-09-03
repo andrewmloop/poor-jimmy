@@ -1,6 +1,6 @@
 import { AudioPlayer } from "@discordjs/voice";
 import { GuildMember, Message, TextChannel, VoiceChannel } from "discord.js";
-import * as ytdl from "ytdl-core";
+import ytdl from "ytdl-core";
 
 export interface Track {
   info: ytdl.videoInfo;
@@ -12,6 +12,7 @@ export interface Track {
 }
 
 export interface Queue {
+  name: string | null;
   voiceChannel: VoiceChannel;
   textChannel: TextChannel;
   tracks: Track[];

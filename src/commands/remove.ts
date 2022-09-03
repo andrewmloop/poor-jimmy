@@ -19,7 +19,7 @@ export default class Remove extends Command {
 
   execute = async (interaction: CommandInteraction): Promise<void> => {
     const guildId = interaction.guildId as string;
-    const serverQueue = this.client.queueMap.get(guildId);
+    const serverQueue = this.client.activeQueueMap.get(guildId);
 
     await interaction.deferReply();
 

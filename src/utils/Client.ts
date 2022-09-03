@@ -4,8 +4,6 @@ import {
   CommandInteraction,
   Events,
   GatewayIntentBits,
-  Interaction,
-  InteractionType,
   REST,
   Routes,
 } from "discord.js";
@@ -14,10 +12,13 @@ import { Command } from "./Command";
 import { commandIndex } from "../commands";
 
 export class Client extends DiscordClient {
-  commands: Collection<string, Command>;
-  queueMap: Map<string, Queue>;
   token: string;
   testGuildId: string;
+  commands: Collection<string, Command>;
+  // Map of guildId to created Queue Array
+  queueListMap: Map<string, Queue[]>;
+  // Map of guildId to active Queue
+  activeQueueMap: Map<string, Queue>;
 
   public constructor(token?: string, testGuildId?: string) {
     super({
@@ -28,10 +29,11 @@ export class Client extends DiscordClient {
         GatewayIntentBits.MessageContent,
       ],
     });
-    this.commands = new Collection();
-    this.queueMap = new Map();
     this.token = token as string;
     this.testGuildId = testGuildId as string;
+    this.commands = new Collection();
+    this.queueListMap = new Map();
+    this.activeQueueMap = new Map();
 
     // Load all commands
     for (let command of commandIndex) {
@@ -77,6 +79,15 @@ export class Client extends DiscordClient {
       console.log("Successfully deployed slash commands");
     } catch (error) {
       console.log(error);
+    }
+  }
+
+  addQueueToList(guildId: string, queue: Queue): void {
+    const queueList = this.queueListMap.get(guildId);
+
+    if (queueList) {
+      queueList.push(queue);
+      this.queueListMap.set(guildId, queueList);
     }
   }
 }

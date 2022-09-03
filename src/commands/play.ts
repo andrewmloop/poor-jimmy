@@ -97,7 +97,7 @@ export default class Play extends Command {
     );
 
     if (!serverQueue.isPlaying) {
-      await this.playTrack(guild.id, this.client.queueMap);
+      await this.playTrack(guild.id, this.client.activeQueueMap);
       return this.getNowPlayingMessage(serverQueue);
     }
 
@@ -127,10 +127,11 @@ export default class Play extends Command {
     voiceChannel: VoiceChannel,
     textChannel: TextChannel,
   ): Queue {
-    let serverQueue: Queue = this.client.queueMap.get(guild.id) as Queue;
+    let serverQueue: Queue = this.client.activeQueueMap.get(guild.id) as Queue;
 
     if (serverQueue === undefined) {
       serverQueue = {
+        name: "Default",
         voiceChannel: voiceChannel,
         textChannel: textChannel,
         tracks: [],
@@ -139,7 +140,8 @@ export default class Play extends Command {
         isPlaying: false,
         isLoop: false,
       };
-      this.client.queueMap.set(guild.id, serverQueue);
+      this.client.activeQueueMap.set(guild.id, serverQueue);
+      this.client.addQueueToList(guild.id, serverQueue);
     }
 
     serverQueue.tracks.push(track);

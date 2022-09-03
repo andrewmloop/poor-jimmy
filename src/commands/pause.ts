@@ -12,7 +12,7 @@ export default class Pause extends Command {
 
   execute = async (interaction: CommandInteraction): Promise<void> => {
     const guildId = interaction.guildId as string;
-    const serverQueue = this.client.queueMap.get(guildId);
+    const serverQueue = this.client.activeQueueMap.get(guildId);
     const player = serverQueue?.player as AudioPlayer;
 
     if (serverQueue?.isPlaying) {
