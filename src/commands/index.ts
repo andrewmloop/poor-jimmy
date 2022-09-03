@@ -5,6 +5,7 @@ import ping from "./ping";
 import play from "./play";
 import remove from "./remove";
 import resume from "./resume";
+import skip from "./skip";
 
 export const commandIndex = [
   list,
@@ -14,4 +15,5 @@ export const commandIndex = [
   play,
   remove,
   resume,
+  skip,
 ];
