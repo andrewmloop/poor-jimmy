@@ -1,24 +1,7 @@
-// import { AudioPlayer } from "@discordjs/voice";
-// import { CommandInteraction, SlashCommandBuilder } from "discord.js";
-
 import { CommandInteraction, SlashCommandBuilder } from "discord.js";
 import { Track } from "../utils/Bot";
 import { Command } from "../utils/Command";
 
-// export const nowPlaying = {
-//   isPlayer: true,
-
-//   data: new SlashCommandBuilder()
-//     .setName("now-playing")
-//     .setDescription("Displays info about the currently playing track"),
-
-//   async execute(interaction: CommandInteraction, player: AudioPlayer) {
-//     try {
-//     } catch (error) {
-//       console.log(error);
-//     }
-//   },
-// };
 export default class NowPlaying extends Command {
   name = "nowplaying";
   description = "Display info about the currently playing track";
