@@ -38,14 +38,10 @@ export default class NowPlaying extends Command {
   };
 
   private getNowPlayingInfo(track: Track): string {
-    const title = track.title;
-    const url = track.url;
+    const link = this.getFormattedLink(track);
     const requester = track.requestedBy.user.username;
     const duration = track.formattedDuration;
 
-    return `Now Playing:\n
-            ${title} [${url}]\n
-            ${duration}\n
-            requested by: ${requester}`;
+    return `Now Playing:\n${link}\n${duration}\nRequested by: ${requester}`;
   }
 }
