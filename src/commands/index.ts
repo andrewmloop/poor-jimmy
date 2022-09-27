@@ -1,4 +1,7 @@
+import createQ from "./createQ";
+import currentQ from "./currentQ";
 import list from "./list";
+import listQ from "./listQ";
 import loop from "./loop";
 import nowplaying from "./nowplaying";
 import pause from "./pause";
@@ -9,7 +12,10 @@ import resume from "./resume";
 import skip from "./skip";
 
 export const commandIndex = [
+  createQ,
+  currentQ,
   list,
+  listQ,
   loop,
   nowplaying,
   pause,
