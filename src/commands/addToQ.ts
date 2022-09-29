@@ -1,7 +1,11 @@
-import { CommandInteraction, SlashCommandBuilder } from "discord.js";
-import { Command } from "../utils/Command";
+import {
+  CommandInteraction,
+  GuildMember,
+  SlashCommandBuilder,
+} from "discord.js";
+import { PlayCommand } from "../utils/PlayCommand";
 
-export default class AddToQ extends Command {
+export default class AddToQ extends PlayCommand {
   name = "addToQ";
   description = "Add tracks to a specified queue";
 
@@ -24,20 +28,29 @@ export default class AddToQ extends Command {
   execute = async (interaction: CommandInteraction): Promise<void> => {
     await interaction.deferReply();
 
-    const guildId = interaction.guildId as string as string;
+    const guildId = interaction.guildId as string;
+    const member = interaction.member as GuildMember;
     const queueOption = interaction.options.get("queue")?.value;
-    const urlOption = interaction.options.get("url")?.value;
+    const urlOption = interaction.options.get("url")?.value as string;
 
     const queueList = this.client.queueListMap.get(guildId);
 
-    if (!queueList) {
+    const queueToAdd = queueList?.find((queue) => queue.name === queueOption);
+
+    if (!queueToAdd) {
       await interaction.editReply("A queue with that name wasn't found!");
       return;
     }
-    const queueToAdd = queueList?.find((queue) => queue.name === queueOption);
 
     if (queueToAdd) {
-      queueToAdd.tracks.push(urlOption);
+      const track = await this.fetchTrack(urlOption, member);
+
+      if (track instanceof Error) {
+        interaction.editReply("Could not find track to add!");
+        return;
+      }
+
+      queueToAdd.tracks.push(track);
     }
   };
 }

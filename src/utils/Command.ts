@@ -31,4 +31,12 @@ export abstract class Command {
     if (error instanceof Error) return error.message;
     return error as string;
   }
+
+  protected handleError(error: unknown): Error {
+    if (error instanceof Error) {
+      return error;
+    } else {
+      return new Error(error as string);
+    }
+  }
 }

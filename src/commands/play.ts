@@ -6,7 +6,6 @@ import {
   TextChannel,
   VoiceChannel,
 } from "discord.js";
-import { Command } from "../utils/Command";
 import ytdl from "ytdl-core";
 import { Queue, Track } from "../utils/Bot";
 import {
@@ -22,8 +21,9 @@ import {
   VoiceConnectionDisconnectReason,
   VoiceConnectionStatus,
 } from "@discordjs/voice";
+import { PlayCommand } from "../utils/PlayCommand";
 
-export default class Play extends Command {
+export default class Play extends PlayCommand {
   name = "play";
   description = "Add a track from a URL to the queue";
 
@@ -68,26 +68,28 @@ export default class Play extends Command {
       return `You must be in a voice channel to play a track!`;
     }
 
-    let trackInfo: ytdl.videoInfo;
-    try {
-      trackInfo = await this.getTrackInfo(url);
-    } catch (error) {
-      return this.getErrorMessage(error);
-    }
+    // let trackInfo: ytdl.videoInfo;
+    // try {
+    //   trackInfo = await this.fetchTrackInfo(url);
+    // } catch (error) {
+    //   return this.getErrorMessage(error);
+    // }
 
-    if (trackInfo === null) {
-      return `Could not find track!`;
-    }
+    // if (trackInfo === null) {
+    //   return `Could not find track!`;
+    // }
 
-    const duration = parseInt(trackInfo.videoDetails.lengthSeconds);
-    const track: Track = {
-      info: trackInfo,
-      title: trackInfo.videoDetails.title,
-      url: trackInfo.videoDetails.video_url,
-      duration: duration,
-      formattedDuration: this.formatDuration(duration),
-      requestedBy: member,
-    };
+    // const duration = parseInt(trackInfo.videoDetails.lengthSeconds);
+    // const track: Track = {
+    //   info: trackInfo,
+    //   title: trackInfo.videoDetails.title,
+    //   url: trackInfo.videoDetails.video_url,
+    //   duration: duration,
+    //   formattedDuration: this.formatDuration(duration),
+    //   requestedBy: member,
+    // };
+    const track = await this.fetchTrack(url, member);
+    if (track instanceof Error) return track.message;
 
     const serverQueue = this.addToQueue(
       track,
@@ -97,58 +99,58 @@ export default class Play extends Command {
     );
 
     if (!serverQueue.isPlaying) {
-      await this.playTrack(guild.id, this.client.activeQueueMap);
+      await this.playFirstTrack(guild.id, this.client.activeQueueMap);
       return this.getNowPlayingMessage(serverQueue);
     }
 
     return `${track.title} added to the queue!`;
   }
 
-  private async getTrackInfo(url: string): Promise<ytdl.videoInfo> {
-    let songInfo = null;
+  // private async fetchTrackInfo(url: string): Promise<ytdl.videoInfo> {
+  //   let songInfo = null;
 
-    if (!ytdl.validateURL(url)) {
-      throw Error("Unable to find track!");
-    }
+  //   if (!ytdl.validateURL(url)) {
+  //     throw Error("Unable to find track!");
+  //   }
 
-    try {
-      songInfo = await ytdl.getInfo(url);
-    } catch (error) {
-      console.log(error);
-      throw Error("Error getting video from URL");
-    }
+  //   try {
+  //     songInfo = await ytdl.getInfo(url);
+  //   } catch (error) {
+  //     console.log(error);
+  //     throw Error("Error getting video from URL");
+  //   }
 
-    return songInfo;
-  }
+  //   return songInfo;
+  // }
 
-  private addToQueue(
-    track: Track,
-    guild: Guild,
-    voiceChannel: VoiceChannel,
-    textChannel: TextChannel,
-  ): Queue {
-    let serverQueue: Queue = this.client.activeQueueMap.get(guild.id) as Queue;
+  // private addToQueue(
+  //   track: Track,
+  //   guild: Guild,
+  //   voiceChannel: VoiceChannel,
+  //   textChannel: TextChannel,
+  // ): Queue {
+  //   let serverQueue: Queue = this.client.activeQueueMap.get(guild.id) as Queue;
 
-    if (serverQueue === undefined) {
-      serverQueue = {
-        name: "Default",
-        voiceChannel: voiceChannel,
-        textChannel: textChannel,
-        tracks: [],
-        player: null,
-        playingMessage: null,
-        isPlaying: false,
-        isLoop: false,
-      };
-      this.client.activeQueueMap.set(guild.id, serverQueue);
-      this.client.addQueueToList(guild.id, serverQueue);
-    }
+  //   if (serverQueue === undefined) {
+  //     serverQueue = {
+  //       name: "Default",
+  //       voiceChannel: voiceChannel,
+  //       textChannel: textChannel,
+  //       tracks: [],
+  //       player: null,
+  //       playingMessage: null,
+  //       isPlaying: false,
+  //       isLoop: false,
+  //     };
+  //     this.client.activeQueueMap.set(guild.id, serverQueue);
+  //     this.client.addQueueToList(guild.id, serverQueue);
+  //   }
 
-    serverQueue.tracks.push(track);
-    return serverQueue;
-  }
+  //   serverQueue.tracks.push(track);
+  //   return serverQueue;
+  // }
 
-  private async playTrack(
+  private async playFirstTrack(
     guildId: string,
     queueMap: Map<string, Queue>,
   ): Promise<void> {
@@ -162,7 +164,7 @@ export default class Play extends Command {
 
     const track = serverQueue.tracks[0];
     const connection = await this.connectToChannel(serverQueue.voiceChannel);
-    serverQueue.player = await this.getAudioPlayer(track);
+    serverQueue.player = await this.createAudioPlayer(track);
     connection.subscribe(serverQueue.player);
     serverQueue.isPlaying = true;
 
@@ -236,7 +238,7 @@ export default class Play extends Command {
     }
   }
 
-  private async getAudioPlayer(track: Track): Promise<AudioPlayer> {
+  private async createAudioPlayer(track: Track): Promise<AudioPlayer> {
     const player = createAudioPlayer();
     const stream = ytdl(track.url, {
       filter: "audioonly",
@@ -260,7 +262,7 @@ export default class Play extends Command {
         serverQueue.tracks.push(track);
       }
       serverQueue.tracks.shift();
-      this.playTrack(guildId, queueMap);
+      this.playFirstTrack(guildId, queueMap);
     }
   }
 
