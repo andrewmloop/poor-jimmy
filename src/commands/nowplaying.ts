@@ -1,8 +1,8 @@
 import { CommandInteraction, SlashCommandBuilder } from "discord.js";
 import { Track } from "../utils/Bot";
-import { Command } from "../utils/Command";
+import { PlayCommand } from "../utils/PlayCommand";
 
-export default class NowPlaying extends Command {
+export default class NowPlaying extends PlayCommand {
   name = "nowplaying";
   description = "Display info about the currently playing track";
 
