@@ -7,6 +7,7 @@ import {
   VoiceChannel,
 } from "discord.js";
 import ytdl from "ytdl-core";
+import spdl from "spdl-core";
 import { Queue, Track } from "../utils/Bot";
 import {
   AudioPlayer,
@@ -240,10 +241,17 @@ export default class Play extends PlayCommand {
 
   private async createAudioPlayer(track: Track): Promise<AudioPlayer> {
     const player = createAudioPlayer();
-    const stream = ytdl(track.url, {
-      filter: "audioonly",
-      highWaterMark: 1 << 25,
-    });
+    let stream: any;
+    if (spdl.validateURL(track.url)) {
+      stream = spdl(track.url, {
+        filter: "audioonly",
+      });
+    } else {
+      stream = ytdl(track.url, {
+        filter: "audioonly",
+        highWaterMark: 1 << 25,
+      });
+    }
     const resource = createAudioResource(stream, {
       inputType: StreamType.Arbitrary,
     });

@@ -1,6 +1,7 @@
 import { Guild, GuildMember, TextChannel, VoiceChannel } from "discord.js";
 import { Command } from "../utils/Command";
 import ytdl from "ytdl-core";
+import spdl from "spdl-core";
 import { Queue, Track } from "../utils/Bot";
 import {
   AudioPlayer,
@@ -64,18 +65,22 @@ export abstract class PlayCommand extends Command {
     return activeQ?.player as AudioPlayer;
   }
 
-  protected async fetchTrackInfo(url: string): Promise<ytdl.videoInfo> {
+  protected async fetchTrackInfo(
+    url: string,
+  ): Promise<ytdl.videoInfo | spdl.trackInfo> {
     let songInfo = null;
 
-    if (!ytdl.validateURL(url)) {
-      throw Error("Unable to find track!");
-    }
-
     try {
-      songInfo = await ytdl.getInfo(url);
+      if (spdl.validateURL(url)) {
+        songInfo = await spdl.getInfo(url);
+      } else if (ytdl.validateURL(url)) {
+        songInfo = await ytdl.getInfo(url);
+      } else {
+        throw Error("Unable to find track!");
+      }
     } catch (error) {
       console.log(error);
-      throw Error("Error getting video from URL");
+      throw Error("Error getting info from URL");
     }
 
     return songInfo;
@@ -85,41 +90,84 @@ export abstract class PlayCommand extends Command {
     url: string,
     member: GuildMember,
   ): Promise<Track | Error> {
-    let trackInfo: ytdl.videoInfo;
-    try {
-      trackInfo = await this.fetchTrackInfo(url);
-    } catch (error) {
-      return this.handleError(error);
+    if (spdl.validateURL(url)) {
+      let trackInfo: spdl.trackInfo;
+
+      try {
+        trackInfo = (await this.fetchTrackInfo(url)) as spdl.trackInfo;
+      } catch (error) {
+        return this.handleError(error);
+      }
+
+      if (trackInfo === null) {
+        return this.handleError(`Could not find track!`);
+      }
+
+      const duration = trackInfo.duration as number;
+      const track: Track = {
+        ytInfo: null,
+        spInfo: trackInfo,
+        title: trackInfo.title,
+        url: trackInfo.url,
+        duration: duration,
+        formattedDuration: this.formatDuration(duration),
+        requestedBy: member,
+      };
+
+      return track;
+    } else {
+      let trackInfo: ytdl.videoInfo;
+
+      try {
+        trackInfo = (await this.fetchTrackInfo(url)) as ytdl.videoInfo;
+      } catch (error) {
+        return this.handleError(error);
+      }
+
+      if (trackInfo === null) {
+        return this.handleError(`Could not find track!`);
+      }
+
+      const duration = parseInt(trackInfo.videoDetails.lengthSeconds);
+      const track: Track = {
+        ytInfo: trackInfo,
+        spInfo: null,
+        title: trackInfo.videoDetails.title,
+        url: trackInfo.videoDetails.video_url,
+        duration: duration,
+        formattedDuration: this.formatDuration(duration),
+        requestedBy: member,
+      };
+
+      return track;
     }
-
-    if (trackInfo === null) {
-      return this.handleError(`Could not find track!`);
-    }
-
-    const duration = parseInt(trackInfo.videoDetails.lengthSeconds);
-    const track: Track = {
-      info: trackInfo,
-      title: trackInfo.videoDetails.title,
-      url: trackInfo.videoDetails.video_url,
-      duration: duration,
-      formattedDuration: this.formatDuration(duration),
-      requestedBy: member,
-    };
-
-    return track;
   }
 
   protected async playTrack(track: Track, player: AudioPlayer): Promise<void> {
-    const stream = ytdl(track.url, {
-      filter: "audioonly",
-      highWaterMark: 1 << 25,
-    });
-    const resource = createAudioResource(stream, {
-      inputType: StreamType.Arbitrary,
-    });
-    player.stop();
-    await entersState(player, AudioPlayerStatus.Idle, 5_000);
-    player.play(resource);
-    await entersState(player, AudioPlayerStatus.Playing, 5_000);
+    if (track.spInfo !== null) {
+      const stream = await spdl(track.url, {
+        filter: "audioonly",
+        highWaterMark: 1 << 25,
+      });
+      const resource = createAudioResource(stream, {
+        inputType: StreamType.Arbitrary,
+      });
+      player.stop();
+      await entersState(player, AudioPlayerStatus.Idle, 5_000);
+      player.play(resource);
+      await entersState(player, AudioPlayerStatus.Playing, 5_000);
+    } else {
+      const stream = ytdl(track.url, {
+        filter: "audioonly",
+        highWaterMark: 1 << 25,
+      });
+      const resource = createAudioResource(stream, {
+        inputType: StreamType.Arbitrary,
+      });
+      player.stop();
+      await entersState(player, AudioPlayerStatus.Idle, 5_000);
+      player.play(resource);
+      await entersState(player, AudioPlayerStatus.Playing, 5_000);
+    }
   }
 }

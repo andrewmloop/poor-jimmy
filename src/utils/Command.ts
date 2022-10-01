@@ -1,5 +1,4 @@
 import { CommandInteraction, SlashCommandBuilder } from "discord.js";
-import { Track } from "./Bot";
 import { Client } from "./Client";
 
 export abstract class Command {
