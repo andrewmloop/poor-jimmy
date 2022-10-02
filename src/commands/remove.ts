@@ -3,7 +3,7 @@ import { Command } from "../utils/Command";
 
 export default class Remove extends Command {
   name = "remove";
-  description = "Remove a track from the queue";
+  description = "Remove a track from the active queue";
 
   data = new SlashCommandBuilder()
     .setName(this.name)
@@ -12,28 +12,43 @@ export default class Remove extends Command {
       return option
         .setName("index")
         .setDescription(
-          "The index of the track in the queue. Use /nowplaying for the index",
+          "The index of the track in the queue. Use /list for the index",
         )
         .setRequired(true);
     });
 
   execute = async (interaction: CommandInteraction): Promise<void> => {
-    const guildId = interaction.guildId as string;
-    const serverQueue = this.client.activeQueueMap.get(guildId);
-
     await interaction.deferReply();
 
-    const tracks = serverQueue?.tracks;
+    const guildId = interaction.guildId as string;
+    const activeQueue = this.client.activeQueueMap.get(guildId);
+
+    if (!activeQueue) {
+      this.handleReply(interaction, "No queue found!");
+      return;
+    }
+
+    const tracks = activeQueue.tracks;
     const index = interaction.options.get("index")?.value as number;
 
-    // Don't allow index of 0, we want to use /skip to remove the current track
-    if (!tracks || !index || index < 1 || index > tracks?.length) {
-      interaction.editReply("Choose an index in range!");
+    // Error handling for an empty queue and improper index input
+    if (!tracks || tracks.length === 0) {
+      this.handleReply(interaction, "No tracks in queue!");
+      return;
+    }
+
+    if (index < 0 && index > tracks.length - 1) {
+      this.handleReply(interaction, "Choose an index in range!");
+      return;
+    }
+
+    if (index === 0) {
+      this.handleReply(interaction, "Use /skip to remove the current track");
       return;
     }
 
     const removedSong = tracks.splice(index, 1)[0];
 
-    interaction.editReply(`Removed track: ${removedSong.title}`);
+    interaction.editReply(`Removed ${removedSong.title}`);
   };
 }
