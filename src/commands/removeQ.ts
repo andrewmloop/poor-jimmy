@@ -16,35 +16,42 @@ export default class RemoveQ extends Command {
     });
 
   execute = async (interaction: CommandInteraction): Promise<void> => {
-    // Defer reply
     interaction.deferReply();
 
     // Grab required variables
     const guildId = interaction.guildId as string;
-    const client = this.client;
-    const activeQ = client.activeQueueMap.get(guildId);
+    const activeQueue = this.client.activeQueueMap.get(guildId);
+    const queueList = this.client.queueListMap.get(guildId);
     const option = interaction.options.get("name")?.value as string;
 
-    // Make sure the Q to be removed is not the current queue playing
-    if (activeQ?.name === option) {
-      interaction.editReply(
-        "You can't remove the active queue. Please switch to another before removing.",
+    // Make sure the queue to be removed is not the current queue playing
+    if (activeQueue && activeQueue.name === option) {
+      this.handleReply(
+        interaction,
+        "You can't remove the active queue. Please /switchq to another before removing",
       );
       return;
     }
 
-    // Remove queue
-    if (activeQ) {
-      const isSuccess = client.activeQueueMap.delete(option);
-
-      // Edit reply
-      if (isSuccess) {
-        interaction.editReply(`Successfully removed ${option}`);
-      } else {
-        interaction.editReply(`Error removing ${option}`);
-      }
+    if (!queueList) {
+      this.handleReply(interaction, "Unable to find queue list!");
+      return;
     }
 
-    return;
+    // Remove queue
+    let isSuccess = false;
+    queueList.forEach((queue, index) => {
+      if (queue.name === option) {
+        queueList.splice(index, 1);
+        isSuccess = true;
+      }
+    });
+
+    // Edit reply
+    if (isSuccess) {
+      this.handleReply(interaction, `Successfully removed ${option}`);
+    } else {
+      this.handleReply(interaction, `Unable to remove ${option}`);
+    }
   };
 }
