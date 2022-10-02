@@ -4,28 +4,37 @@ import { Command } from "../utils/Command";
 
 export default class Pause extends Command {
   name = "pause";
-  description = "Pauses the current track";
+  description = "Pause the current track";
 
   data = new SlashCommandBuilder()
     .setName(this.name)
     .setDescription(this.description);
 
   execute = async (interaction: CommandInteraction): Promise<void> => {
+    interaction.deferReply();
+
     const guildId = interaction.guildId as string;
-    const serverQueue = this.client.activeQueueMap.get(guildId);
-    const player = serverQueue?.player as AudioPlayer;
+    const activeQueue = this.client.activeQueueMap.get(guildId);
 
-    if (serverQueue?.isPlaying) {
-      player.pause();
-
-      try {
-        await entersState(player, AudioPlayerStatus.Paused, 5_000);
-      } catch (error) {
-        console.log(error);
-        return;
-      }
-
-      serverQueue.isPlaying = false;
+    if (!activeQueue) {
+      this.handleReply(interaction, "No queue found!");
+      return;
     }
+
+    if (activeQueue.isPlaying === false) {
+      this.handleReply(interaction, "The current track is paused!");
+    }
+
+    const player = activeQueue.player as AudioPlayer;
+    player.pause();
+
+    try {
+      await entersState(player, AudioPlayerStatus.Paused, 5_000);
+    } catch (error) {
+      this.handleReply(interaction, "Unable to pause track!");
+      return;
+    }
+
+    activeQueue.isPlaying = false;
   };
 }
