@@ -11,21 +11,31 @@ export default class Resume extends Command {
     .setDescription(this.description);
 
   execute = async (interaction: CommandInteraction): Promise<void> => {
+    interaction.deferReply();
+
     const guildId = interaction.guildId as string;
-    const serverQueue = this.client.activeQueueMap.get(guildId);
-    const player = serverQueue?.player as AudioPlayer;
+    const activeQueue = this.client.activeQueueMap.get(guildId);
 
-    if (serverQueue?.isPlaying === false) {
-      player.unpause();
-
-      try {
-        await entersState(player, AudioPlayerStatus.Playing, 5_000);
-      } catch (error) {
-        console.log(error);
-        return;
-      }
-
-      serverQueue.isPlaying = true;
+    if (!activeQueue) {
+      this.handleReply(interaction, "No queue found!");
+      return;
     }
+
+    if (activeQueue.isPlaying === true) {
+      this.handleReply(interaction, "A track is playing!");
+      return;
+    }
+
+    const player = activeQueue.player as AudioPlayer;
+    player.unpause();
+
+    try {
+      await entersState(player, AudioPlayerStatus.Playing, 5_000);
+    } catch (error) {
+      this.handleReply(interaction, "Unable to resume track!");
+      return;
+    }
+
+    activeQueue.isPlaying = true;
   };
 }

@@ -1,4 +1,4 @@
-import { CommandInteraction, SlashCommandBuilder } from "discord.js";
+import { CommandInteraction } from "discord.js";
 import { Client } from "./Client";
 
 export abstract class Command {
@@ -10,6 +10,10 @@ export abstract class Command {
 
   public constructor(client: Client) {
     this.client = client;
+  }
+
+  protected handleReply(interaction: CommandInteraction, message: string) {
+    interaction.editReply(message);
   }
 
   protected handleError(error: unknown): Error {

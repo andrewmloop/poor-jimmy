@@ -38,8 +38,4 @@ export default class Skip extends PlayCommand {
 
     this.handleReply(interaction, "Track skipped!");
   };
-
-  private handleReply(interaction: CommandInteraction, message: string): void {
-    interaction.editReply(message);
-  }
 }
