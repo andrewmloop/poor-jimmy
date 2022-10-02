@@ -27,7 +27,7 @@ export default class List extends Command {
       return;
     }
 
-    let replyString = `${activeQueue.name} Queue:\n`;
+    let replyString = `${activeQueue.name} Queue:\nQueue looping: ${activeQueue.isLoop}\n\n`;
 
     const titles = tracks.map((track) => track.title);
 
