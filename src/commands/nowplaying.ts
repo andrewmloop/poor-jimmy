@@ -11,14 +11,23 @@ export default class NowPlaying extends PlayCommand {
     .setDescription(this.description);
 
   execute = async (interaction: CommandInteraction): Promise<void> => {
+    interaction.deferReply();
+
     const guildId = interaction.guildId as string;
-    const serverQueue = this.client.activeQueueMap.get(guildId);
-    const track = serverQueue?.tracks[0];
+    const activeQueue = this.client.activeQueueMap.get(guildId);
+
+    if (!activeQueue) {
+      this.handleReply(interaction, "No queue found!");
+      return;
+    }
+
+    const track = activeQueue.tracks[0];
 
     if (track) {
-      await interaction.reply(this.getNowPlayingInfo(track));
+      const reply = this.getNowPlayingInfo(track);
+      this.handleReply(interaction, reply);
     } else {
-      await interaction.reply("There's nothing playing!");
+      this.handleReply(interaction, "No track playing!");
     }
   };
 
