@@ -2,7 +2,7 @@ import { CommandInteraction, SlashCommandBuilder } from "discord.js";
 import { Command } from "../utils/Command";
 
 export default class RemoveQ extends Command {
-  name = "removeQ";
+  name = "removeq";
   description = "Remove an existing queue from your list of available queues";
 
   data = new SlashCommandBuilder()

@@ -9,7 +9,7 @@ import { Queue } from "../utils/Bot";
 import { Command } from "../utils/Command";
 
 export default class CreateQ extends Command {
-  name = "createQ";
+  name = "createq";
   description = "Create a queue that can hold it's own list of tracks";
 
   data = new SlashCommandBuilder()

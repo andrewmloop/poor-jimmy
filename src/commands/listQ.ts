@@ -2,7 +2,7 @@ import { CommandInteraction, SlashCommandBuilder } from "discord.js";
 import { Command } from "../utils/Command";
 
 export default class ListQ extends Command {
-  name = "listQ";
+  name = "listqs";
   description = "Display a list of created queues";
 
   data = new SlashCommandBuilder()

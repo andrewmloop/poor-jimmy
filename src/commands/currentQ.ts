@@ -2,7 +2,7 @@ import { CommandInteraction, SlashCommandBuilder } from "discord.js";
 import { Command } from "../utils/Command";
 
 export default class CurrentQ extends Command {
-  name = "currentQ";
+  name = "currentq";
   description = "Displays the current queue and it's tracks";
 
   data = new SlashCommandBuilder()

@@ -6,7 +6,7 @@ import {
 import { PlayCommand } from "../utils/PlayCommand";
 
 export default class AddToQ extends PlayCommand {
-  name = "addToQ";
+  name = "addtoq";
   description = "Add tracks to a specified queue";
 
   data = new SlashCommandBuilder()
