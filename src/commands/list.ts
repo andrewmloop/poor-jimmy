@@ -3,7 +3,7 @@ import { Command } from "../utils/Command";
 
 export default class List extends Command {
   name = "list";
-  description = "Display the queued tracks";
+  description = "Display the active queue's tracks";
 
   data = new SlashCommandBuilder()
     .setName(this.name)
@@ -13,25 +13,36 @@ export default class List extends Command {
     await interaction.deferReply();
 
     const guildId = interaction.guildId as string;
-    const serverQueue = this.client.activeQueueMap.get(guildId);
-    const tracks = serverQueue?.tracks;
+    const activeQueue = this.client.activeQueueMap.get(guildId);
 
-    if (!tracks) {
-      interaction.editReply("There are no tracks queued!");
+    if (!activeQueue) {
+      this.handleReply(interaction, "No queue found!");
       return;
     }
 
-    let list = "Queue:\n";
+    const tracks = activeQueue.tracks;
+
+    if (!tracks || tracks.length === 0) {
+      this.handleReply(interaction, "No tracks in queue!");
+      return;
+    }
+
+    let replyString = `${activeQueue.name} Queue:\n`;
+
     const titles = tracks.map((track) => track.title);
+
     titles.forEach((title, index) => {
-      /* 
-      Exclude the first element of the list because this is the track that is playing. We want to give proper indexes for /remove to use with. Using /remove on track that is currently playing causes playback issues. This seems like the cleanest way to handle it.
-      */
-      if (index !== 0) {
-        list = list + `#` + index + ": " + title + "\n";
-      }
+      replyString = replyString + this.formatListItem(title, index);
     });
 
-    await interaction.editReply(list);
+    interaction.editReply(replyString);
   };
+
+  private formatListItem(title: string, index: number): string {
+    if (index === 0) {
+      return `Current: ${title}\n`;
+    } else {
+      return `#${index}: ${title}\n`;
+    }
+  }
 }
