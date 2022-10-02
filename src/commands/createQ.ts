@@ -18,7 +18,7 @@ export default class CreateQ extends Command {
     .addStringOption((option) => {
       return option
         .setName("name")
-        .setDescription("The name of the queue")
+        .setDescription("The name of the queue to be created")
         .setRequired(true);
     });
 
@@ -48,10 +48,9 @@ export default class CreateQ extends Command {
 
       this.client.addQueueToList(guildId, newQueue);
 
-      await interaction.editReply(`${queueName} queue created!`);
-      return;
+      this.handleReply(interaction, `${queueName} queue created!`);
+    } else {
+      this.handleReply(interaction, "Couldn't create queue!");
     }
-
-    await interaction.editReply("Couldn't create queue!");
   };
 }
