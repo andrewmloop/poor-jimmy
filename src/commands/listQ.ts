@@ -20,11 +20,16 @@ export default class ListQ extends Command {
       return;
     }
 
-    let list = "Queues:\n";
-    queueList?.forEach((queue, index) => {
-      list = list + "#" + index + ": " + queue.name + "\n";
+    let replyString = "Queues:\n";
+    queueList.forEach((queue, index) => {
+      replyString =
+        replyString + this.formatListItem(queue.name as string, index);
     });
 
-    await interaction.editReply(list);
+    await interaction.editReply(replyString);
   };
+
+  private formatListItem(name: string, index: number): string {
+    return `#${index + 1}: ${name}\n`;
+  }
 }
