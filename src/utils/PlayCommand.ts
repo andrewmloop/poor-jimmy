@@ -37,10 +37,10 @@ export abstract class PlayCommand extends Command {
     voiceChannel: VoiceChannel,
     textChannel: TextChannel,
   ): Queue {
-    let serverQueue: Queue = this.client.activeQueueMap.get(guild.id) as Queue;
+    let activeQueue: Queue = this.client.activeQueueMap.get(guild.id) as Queue;
 
-    if (serverQueue === undefined) {
-      serverQueue = {
+    if (activeQueue === undefined) {
+      activeQueue = {
         name: "Default",
         voiceChannel: voiceChannel,
         textChannel: textChannel,
@@ -50,12 +50,12 @@ export abstract class PlayCommand extends Command {
         isPlaying: false,
         isLoop: false,
       };
-      this.client.activeQueueMap.set(guild.id, serverQueue);
-      this.client.addQueueToList(guild.id, serverQueue);
+      this.client.activeQueueMap.set(guild.id, activeQueue);
+      this.client.addQueueToList(guild.id, activeQueue);
     }
 
-    serverQueue.tracks.push(track);
-    return serverQueue;
+    activeQueue.tracks.push(track);
+    return activeQueue;
   }
 
   protected getAudioPlayer(guildId: string): AudioPlayer {

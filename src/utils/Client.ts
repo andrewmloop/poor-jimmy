@@ -83,11 +83,23 @@ export class Client extends DiscordClient {
   }
 
   addQueueToList(guildId: string, queue: Queue): void {
+    console.log(this.queueListMap);
+    this.queueListMap.forEach((value: Queue[], key: string) => {
+      console.log(key, value);
+    });
+    // console.log("ACTIVE Q KEYS: " + this.activeQueueMap.keys);
+    // console.log("Q MAP ENTRIES: " + this.queueListMap.entries);
+    // console.log("BEFORE QLIST: " + this.queueListMap);
     const queueList = this.queueListMap.get(guildId);
 
     if (queueList) {
       queueList.push(queue);
-      this.queueListMap.set(guildId, queueList);
+      // I don't think this list.set is needed since queueList
+      // references the array of objects
+      // this.queueListMap.set(guildId, queueList);
+    } else {
+      const initList: Queue[] = [queue];
+      this.queueListMap.set(guildId, initList);
     }
   }
 }
