@@ -14,7 +14,7 @@ export default class Ping extends Command {
   };
 
   private ping(startTime: number): string {
-    const ping = startTime - Date.now();
-    return `Pong! :ping_pong: Your ping is ${ping} ms`;
+    const ping = Math.abs(startTime - Date.now());
+    return `Pong! :ping_pong: Ping is ${ping} ms`;
   }
 }
