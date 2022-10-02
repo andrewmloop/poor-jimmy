@@ -3,29 +3,29 @@ import { Command } from "../utils/Command";
 
 export default class Loop extends Command {
   name = "loop";
-  description = "Enables/disables the queue to loop";
+  description = "Enables/disables looping on the active queue";
 
   data = new SlashCommandBuilder()
     .setName(this.name)
     .setDescription(this.description);
 
   execute = async (interaction: CommandInteraction): Promise<void> => {
+    interaction.deferReply();
+
     const guildId = interaction.guildId as string;
-    const serverQueue = this.client.activeQueueMap.get(guildId);
+    const activeQueue = this.client.activeQueueMap.get(guildId);
 
-    await interaction.deferReply();
-
-    if (serverQueue) {
-      serverQueue.isLoop = !serverQueue.isLoop;
-      if (serverQueue.isLoop) {
-        await interaction.editReply("Queue looping enabled!");
-        return;
-      } else {
-        await interaction.editReply("Queue looping disabled!");
-        return;
-      }
+    if (!activeQueue) {
+      this.handleReply(interaction, "No queue found!");
+      return;
     }
 
-    await interaction.editReply("There is nothing playing!");
+    activeQueue.isLoop = !activeQueue.isLoop;
+
+    if (activeQueue.isLoop) {
+      this.handleReply(interaction, "Queue looping enabled!");
+    } else {
+      this.handleReply(interaction, "Queue looping disabled!");
+    }
   };
 }
