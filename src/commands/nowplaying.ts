@@ -17,6 +17,8 @@ export default class NowPlaying extends PlayCommand {
 
     if (track) {
       await interaction.reply(this.getNowPlayingInfo(track));
+    } else {
+      await interaction.reply("There's nothing playing!");
     }
   };
 
