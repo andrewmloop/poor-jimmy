@@ -115,7 +115,7 @@ export abstract class PlayCommand extends Command {
       };
 
       return track;
-    } else {
+    } else if (ytdl.validateURL(url)) {
       let trackInfo: ytdl.videoInfo;
 
       try {
@@ -140,6 +140,8 @@ export abstract class PlayCommand extends Command {
       };
 
       return track;
+    } else {
+      return this.handleError(new Error("Error fetching track"));
     }
   }
 
@@ -147,13 +149,15 @@ export abstract class PlayCommand extends Command {
     if (track.spInfo !== null) {
       const stream = await spdl(track.url, {
         filter: "audioonly",
-        highWaterMark: 1 << 25,
       });
+
       const resource = createAudioResource(stream, {
         inputType: StreamType.Arbitrary,
       });
+
       player.stop();
       await entersState(player, AudioPlayerStatus.Idle, 5_000);
+
       player.play(resource);
       await entersState(player, AudioPlayerStatus.Playing, 5_000);
     } else {
@@ -161,11 +165,14 @@ export abstract class PlayCommand extends Command {
         filter: "audioonly",
         highWaterMark: 1 << 25,
       });
+
       const resource = createAudioResource(stream, {
         inputType: StreamType.Arbitrary,
       });
+
       player.stop();
       await entersState(player, AudioPlayerStatus.Idle, 5_000);
+
       player.play(resource);
       await entersState(player, AudioPlayerStatus.Playing, 5_000);
     }
