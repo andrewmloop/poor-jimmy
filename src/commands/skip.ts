@@ -39,7 +39,7 @@ export default class Skip extends PlayCommand {
       this.playTrack(tracks[0], player);
       this.handleReply(interaction, "Track skipped!");
     } else {
-      this.handleReply(interaction, "The queue is now empty!");
+      this.handleReply(interaction, "The queue has ended!");
     }
   };
 }
