@@ -12,6 +12,7 @@ import remove from "./remove";
 import removeQ from "./removeQ";
 import resume from "./resume";
 import skip from "./skip";
+import switchQ from "./switchQ";
 
 export const commandIndex = [
   addToQ,
@@ -28,4 +29,5 @@ export const commandIndex = [
   removeQ,
   resume,
   skip,
+  switchQ,
 ];

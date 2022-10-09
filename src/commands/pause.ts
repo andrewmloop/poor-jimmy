@@ -11,7 +11,7 @@ export default class Pause extends Command {
     .setDescription(this.description);
 
   execute = async (interaction: CommandInteraction): Promise<void> => {
-    interaction.deferReply();
+    await interaction.deferReply();
 
     const guildId = interaction.guildId as string;
     const activeQueue = this.client.activeQueueMap.get(guildId);
@@ -30,6 +30,7 @@ export default class Pause extends Command {
 
     try {
       await entersState(player, AudioPlayerStatus.Paused, 5_000);
+      this.handleReply(interaction, "Track paused!");
     } catch (error) {
       this.handleReply(interaction, "Unable to pause track!");
       return;

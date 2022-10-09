@@ -4,6 +4,7 @@ import {
   CommandInteraction,
   Events,
   GatewayIntentBits,
+  GuildMember,
   REST,
   Routes,
 } from "discord.js";
@@ -53,6 +54,21 @@ export class Client extends DiscordClient {
       Events.InteractionCreate,
       async (interaction: CommandInteraction) => {
         if (!interaction.isCommand()) return;
+
+        // Add guildId to queueListMap if not present
+        const guildId = interaction.guildId as string;
+        if (this.queueListMap.get(guildId) === undefined) {
+          this.queueListMap.set(guildId, []);
+        }
+
+        // Don't let a member that is not in a voice
+        // channel use commands
+        const member = interaction.member as GuildMember;
+        if (!member.voice.channel) {
+          interaction.reply("You are not in a voice channel!");
+          return;
+        }
+
         try {
           const command = this.commands.get(interaction.commandName);
 

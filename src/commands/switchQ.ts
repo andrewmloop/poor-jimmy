@@ -1,7 +1,6 @@
 import { AudioPlayerStatus, entersState } from "@discordjs/voice";
 import { CommandInteraction, SlashCommandBuilder } from "discord.js";
 import { PlayCommand } from "../utils/PlayCommand";
-import Play from "./play";
 
 export default class SwitchQ extends PlayCommand {
   name = "switchq";
@@ -18,7 +17,7 @@ export default class SwitchQ extends PlayCommand {
     });
 
   execute = async (interaction: CommandInteraction): Promise<void> => {
-    interaction.deferReply();
+    await interaction.deferReply();
 
     const guildId = interaction.guildId as string;
     const activeQueue = this.client.activeQueueMap.get(guildId);

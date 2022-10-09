@@ -10,7 +10,7 @@ export default class Loop extends Command {
     .setDescription(this.description);
 
   execute = async (interaction: CommandInteraction): Promise<void> => {
-    interaction.deferReply();
+    await interaction.deferReply();
 
     const guildId = interaction.guildId as string;
     const activeQueue = this.client.activeQueueMap.get(guildId);
