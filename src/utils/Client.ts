@@ -14,14 +14,13 @@ import { commandIndex } from "../commands";
 
 export class Client extends DiscordClient {
   token: string;
-  testGuildId: string;
   commands: Collection<string, Command>;
   // Map of guildId to created Queue Array
   queueListMap: Map<string, Queue[]>;
   // Map of guildId to active Queue
   activeQueueMap: Map<string, Queue>;
 
-  public constructor(token?: string, testGuildId?: string) {
+  public constructor(token?: string) {
     super({
       intents: [
         GatewayIntentBits.Guilds,
@@ -31,7 +30,6 @@ export class Client extends DiscordClient {
       ],
     });
     this.token = token as string;
-    this.testGuildId = testGuildId as string;
     this.commands = new Collection();
     this.queueListMap = new Map();
     this.activeQueueMap = new Map();
@@ -103,16 +101,11 @@ export class Client extends DiscordClient {
     this.queueListMap.forEach((value: Queue[], key: string) => {
       console.log(key, value);
     });
-    // console.log("ACTIVE Q KEYS: " + this.activeQueueMap.keys);
-    // console.log("Q MAP ENTRIES: " + this.queueListMap.entries);
-    // console.log("BEFORE QLIST: " + this.queueListMap);
+
     const queueList = this.queueListMap.get(guildId);
 
     if (queueList) {
       queueList.push(queue);
-      // I don't think this list.set is needed since queueList
-      // references the array of objects
-      // this.queueListMap.set(guildId, queueList);
     } else {
       const initList: Queue[] = [queue];
       this.queueListMap.set(guildId, initList);

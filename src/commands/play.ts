@@ -6,22 +6,6 @@ import {
   TextChannel,
   VoiceChannel,
 } from "discord.js";
-import ytdl from "ytdl-core";
-import spdl from "spdl-core";
-import { Queue, Track } from "../utils/Bot";
-import {
-  AudioPlayer,
-  AudioPlayerStatus,
-  createAudioPlayer,
-  createAudioResource,
-  entersState,
-  getVoiceConnection,
-  joinVoiceChannel,
-  StreamType,
-  VoiceConnection,
-  VoiceConnectionDisconnectReason,
-  VoiceConnectionStatus,
-} from "@discordjs/voice";
 import { PlayCommand } from "../utils/PlayCommand";
 
 export default class Play extends PlayCommand {
