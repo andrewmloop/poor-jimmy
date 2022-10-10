@@ -1,3 +1,8 @@
+import {
+  AudioPlayerStatus,
+  entersState,
+  VoiceConnectionStatus,
+} from "@discordjs/voice";
 import { CommandInteraction, SlashCommandBuilder } from "discord.js";
 import { PlayCommand } from "../utils/PlayCommand";
 
@@ -39,7 +44,13 @@ export default class Skip extends PlayCommand {
       this.playTrack(tracks[0], player);
       this.handleReply(interaction, "Track skipped!");
     } else {
-      this.handleReply(interaction, "The queue has ended!");
+      player.stop();
+      try {
+        await entersState(player, AudioPlayerStatus.Idle, 5_000);
+        this.handleReply(interaction, "The queue has ended!");
+      } catch (error) {
+        this.handleReply(interaction, "Error with /skip command! Aborting!");
+      }
     }
   };
 }

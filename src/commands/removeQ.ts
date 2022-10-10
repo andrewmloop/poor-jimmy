@@ -16,7 +16,7 @@ export default class RemoveQ extends Command {
     });
 
   execute = async (interaction: CommandInteraction): Promise<void> => {
-    interaction.deferReply();
+    await interaction.deferReply();
 
     // Grab required variables
     const guildId = interaction.guildId as string;
@@ -28,7 +28,7 @@ export default class RemoveQ extends Command {
     if (activeQueue && activeQueue.name === option) {
       this.handleReply(
         interaction,
-        "You can't remove the active queue. Please /switchq to another before removing",
+        "You can't remove the active queue. Please /switchq to another before removing!",
       );
       return;
     }
@@ -51,7 +51,7 @@ export default class RemoveQ extends Command {
     if (isSuccess) {
       this.handleReply(interaction, `Successfully removed ${option}`);
     } else {
-      this.handleReply(interaction, `Unable to remove ${option}`);
+      this.handleReply(interaction, `Unable to find ${option}`);
     }
   };
 }

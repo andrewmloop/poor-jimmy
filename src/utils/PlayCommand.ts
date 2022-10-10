@@ -50,10 +50,6 @@ export abstract class PlayCommand extends Command {
     guild: Guild,
     member: GuildMember,
   ): Promise<string> {
-    if (!voiceChannel) {
-      return `You must be in a voice channel to play a track!`;
-    }
-
     const track = await this.fetchTrack(url, member);
     if (track instanceof Error) return track.message;
 
@@ -113,7 +109,9 @@ export abstract class PlayCommand extends Command {
 
     try {
       if (spdl.validateURL(url)) {
+        console.log("HERE");
         songInfo = await spdl.getInfo(url);
+        console.log(songInfo);
       } else if (ytdl.validateURL(url)) {
         songInfo = await ytdl.getInfo(url);
       } else {
@@ -121,7 +119,7 @@ export abstract class PlayCommand extends Command {
       }
     } catch (error) {
       console.log(error);
-      throw Error("Error getting info from URL");
+      throw Error("Error getting track details");
     }
 
     return songInfo;

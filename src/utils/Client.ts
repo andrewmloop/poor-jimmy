@@ -90,18 +90,13 @@ export class Client extends DiscordClient {
       await rest.put(Routes.applicationCommands(CLIENTID), {
         body: commandData,
       });
-      console.log("Successfully deployed slash commands");
+      console.log("Successfully deployed slash commands!");
     } catch (error) {
       console.log(error);
     }
   }
 
   addQueueToList(guildId: string, queue: Queue): void {
-    console.log(this.queueListMap);
-    this.queueListMap.forEach((value: Queue[], key: string) => {
-      console.log(key, value);
-    });
-
     const queueList = this.queueListMap.get(guildId);
 
     if (queueList) {
