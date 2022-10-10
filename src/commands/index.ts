@@ -1,4 +1,5 @@
 import addToQ from "./addToQ";
+import commands from "./commands";
 import createQ from "./createQ";
 import currentQ from "./currentQ";
 import list from "./list";
@@ -16,6 +17,7 @@ import switchQ from "./switchQ";
 
 export const commandIndex = [
   addToQ,
+  commands,
   createQ,
   currentQ,
   list,
