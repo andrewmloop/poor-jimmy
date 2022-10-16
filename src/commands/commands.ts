@@ -18,7 +18,7 @@ export default class Commands extends Command {
     const commandList = this.client.commands;
 
     const commandListEmbed = new EmbedBuilder()
-      .setColor(0xbf00ff)
+      .setColor(0x00ff00)
       .setTitle("Command List");
 
     commandList.each((command, name) => {
