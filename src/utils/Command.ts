@@ -1,4 +1,4 @@
-import { CommandInteraction, Embed } from "discord.js";
+import { CommandInteraction, Embed, EmbedBuilder } from "discord.js";
 import { Client } from "./Client";
 
 export abstract class Command {
@@ -12,7 +12,7 @@ export abstract class Command {
     this.client = client;
   }
 
-  protected handleReply(interaction: CommandInteraction, embed: Embed) {
+  protected handleReply(interaction: CommandInteraction, embed: EmbedBuilder) {
     interaction.editReply({
       embeds: [embed],
     });
