@@ -1,5 +1,6 @@
 import {
   CommandInteraction,
+  EmbedBuilder,
   GuildMember,
   SlashCommandBuilder,
 } from "discord.js";
@@ -34,42 +35,52 @@ export default class AddToQ extends PlayCommand {
     const urlOption = interaction.options.get("url")?.value as string;
     const activeQueue = this.client.activeQueueMap.get(guildId);
 
+    const messageEmbed = new EmbedBuilder().setColor(0xff0000);
+
     if (activeQueue && activeQueue.name === queueOption) {
-      this.handleReply(
-        interaction,
+      messageEmbed.setDescription(
         "Please use /play to add tracks to the active queue",
       );
+      this.handleReply(interaction, messageEmbed);
       return;
     }
 
     const queueList = this.client.queueListMap.get(guildId);
 
     if (!queueList) {
-      this.handleReply(interaction, "No queues found!");
+      messageEmbed.setDescription(
+        "No queues found! Use /createq to create a new queue.",
+      );
+      this.handleReply(interaction, messageEmbed);
       return;
     }
 
     const queueToAdd = queueList.find((queue) => queue.name === queueOption);
 
     if (!queueToAdd) {
-      this.handleReply(interaction, `Queue: ${queueOption} can't be found!`);
+      messageEmbed.setDescription(`${queueOption} can't be found!`);
+      this.handleReply(interaction, messageEmbed);
       return;
     }
 
     try {
       const track = await this.fetchTrack(urlOption, member);
       if (track instanceof Error) {
-        this.handleReply(interaction, track.message);
+        messageEmbed.setDescription(track.message);
+        this.handleReply(interaction, messageEmbed);
         return;
       }
       queueToAdd.tracks.push(track);
 
-      this.handleReply(
-        interaction,
-        `Track: ${track.title} added to queue: ${queueToAdd.name}`,
-      );
+      messageEmbed
+        .setColor(0x00ff00)
+        .setDescription(`${track.title} added to ${queueToAdd.name}`);
+
+      this.handleReply(interaction, messageEmbed);
     } catch (error) {
-      this.handleReply(interaction, "Unable to find track to add!");
+      messageEmbed.setDescription("Unable to find track to add!");
+
+      this.handleReply(interaction, messageEmbed);
       return;
     }
   };
