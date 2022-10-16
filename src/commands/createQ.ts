@@ -1,5 +1,6 @@
 import {
   CommandInteraction,
+  EmbedBuilder,
   GuildMember,
   SlashCommandBuilder,
   TextChannel,
@@ -28,12 +29,20 @@ export default class CreateQ extends Command {
     const guildId = interaction.guildId as string;
     const queueList = this.client.queueListMap.get(guildId);
 
+    const messageEmbed = new EmbedBuilder().setColor(0xff0000);
+
     if (queueList) {
       const queueName = interaction.options.get("name")?.value;
 
       const member = interaction.member as GuildMember;
       const textChannel = interaction.channel as TextChannel;
       const voiceChannel = member.voice.channel as VoiceChannel;
+
+      if (queueList?.some((queue) => queue.name === queueName)) {
+        messageEmbed.setDescription("A queue with that name already exists!");
+        this.handleReply(interaction, messageEmbed);
+        return;
+      }
 
       const newQueue: Queue = {
         name: queueName as string,
@@ -48,9 +57,14 @@ export default class CreateQ extends Command {
 
       this.client.addQueueToList(guildId, newQueue);
 
-      this.handleReply(interaction, `${queueName} queue created!`);
+      messageEmbed
+        .setColor(0x00ff00)
+        .setDescription(`${queueName} queue created!`);
+
+      this.handleReply(interaction, messageEmbed);
     } else {
-      this.handleReply(interaction, "Couldn't create queue!");
+      messageEmbed.setDescription("Error creating queue!");
+      this.handleReply(interaction, messageEmbed);
     }
   };
 }
