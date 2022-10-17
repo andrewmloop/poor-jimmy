@@ -1,4 +1,8 @@
-import { CommandInteraction, SlashCommandBuilder } from "discord.js";
+import {
+  CommandInteraction,
+  EmbedBuilder,
+  SlashCommandBuilder,
+} from "discord.js";
 import { Command } from "../utils/Command";
 
 export default class CurrentQ extends Command {
@@ -15,23 +19,40 @@ export default class CurrentQ extends Command {
     const guildId = interaction.guildId as string;
     const activeQueue = this.client.activeQueueMap.get(guildId);
 
+    const messageEmbed = new EmbedBuilder().setColor(0xff0000);
+
     if (!activeQueue) {
-      this.handleReply(interaction, "No active queue found!");
+      messageEmbed.setDescription(
+        "No active queue found! Use /play or /switchq to switch to one!",
+      );
+      this.handleReply(interaction, messageEmbed);
       return;
     }
 
-    let replyString = `Name: ${activeQueue.name}\n\nTracks:\n`;
+    messageEmbed
+      .setTitle("Current Queue")
+      .setColor(0x00ff00)
+      .setDescription(activeQueue.name);
 
     const tracks = activeQueue.tracks;
 
     if (!tracks || tracks.length === 0) {
-      replyString = replyString + `Nothing queued!`;
-      this.handleReply(interaction, replyString);
+      messageEmbed.addFields({
+        name: "Tracks",
+        value: "Nothing queued!",
+        inline: false,
+      });
+
+      this.handleReply(interaction, messageEmbed);
     } else {
+      let replyString = "";
+
       tracks.forEach((track, index) => {
         replyString = replyString + this.formatListItem(track.title, index);
       });
-      this.handleReply(interaction, replyString);
+
+      messageEmbed.addFields({ name: "Tracks", value: replyString });
+      this.handleReply(interaction, messageEmbed);
     }
   };
 
