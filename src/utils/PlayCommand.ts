@@ -1,4 +1,10 @@
-import { Guild, GuildMember, TextChannel, VoiceChannel } from "discord.js";
+import {
+  EmbedBuilder,
+  Guild,
+  GuildMember,
+  TextChannel,
+  VoiceChannel,
+} from "discord.js";
 import { Command } from "../utils/Command";
 import ytdl from "ytdl-core";
 import spdl from "spdl-core";
@@ -49,9 +55,12 @@ export abstract class PlayCommand extends Command {
     voiceChannel: VoiceChannel,
     guild: Guild,
     member: GuildMember,
-  ): Promise<string> {
+  ): Promise<EmbedBuilder> {
+    const messageEmbed = new EmbedBuilder().setColor(0xff0000);
     const track = await this.fetchTrack(url, member);
-    if (track instanceof Error) return track.message;
+    if (track instanceof Error) {
+      return messageEmbed.setDescription(track.message);
+    }
 
     const serverQueue = this.addToQueue(
       track,
@@ -62,10 +71,13 @@ export abstract class PlayCommand extends Command {
 
     if (!serverQueue.isPlaying) {
       await this.playFirstTrack(guild.id, this.client.activeQueueMap);
-      return this.getNowPlayingMessage(serverQueue);
+      messageEmbed.setColor(0x00ff00);
+      return this.getNowPlayingMessage(serverQueue, messageEmbed);
     }
 
-    return `${track.title} added to the queue!`;
+    return messageEmbed
+      .setColor(0x00ff00)
+      .setDescription(`${track.title} added to the queue!`);
   }
 
   protected addToQueue(
@@ -340,10 +352,13 @@ export abstract class PlayCommand extends Command {
     }, timeoutDuration);
   }
 
-  protected getNowPlayingMessage(serverQueue: Queue): string {
+  protected getNowPlayingMessage(
+    serverQueue: Queue,
+    embed: EmbedBuilder,
+  ): EmbedBuilder {
     const track = serverQueue.tracks[0];
     const link = this.getFormattedLink(track);
 
-    return `Now playing:\n${link}`;
+    return this.getNowPlayingInfo(track, embed);
   }
 }

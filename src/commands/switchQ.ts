@@ -73,7 +73,9 @@ export default class SwitchQ extends PlayCommand {
 
     this.client.activeQueueMap.set(guildId, queueToSwitchTo);
 
-    messageEmbed.setDescription(`Switched to ${queueToSwitchTo.name}!`);
+    messageEmbed
+      .setColor(0x00ff00)
+      .setDescription(`Switched to ${queueToSwitchTo.name}!`);
     this.handleReply(interaction, messageEmbed);
 
     this.playFirstTrack(guildId, this.client.activeQueueMap);

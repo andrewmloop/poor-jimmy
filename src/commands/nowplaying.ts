@@ -33,6 +33,7 @@ export default class NowPlaying extends PlayCommand {
     const track = activeQueue.tracks[0];
 
     if (track) {
+      messageEmbed.setColor(0x00ff00);
       const reply = this.getNowPlayingInfo(track, messageEmbed);
       this.handleReply(interaction, reply);
     } else {
@@ -41,20 +42,18 @@ export default class NowPlaying extends PlayCommand {
     }
   };
 
-  private getNowPlayingInfo(track: Track, embed: EmbedBuilder): EmbedBuilder {
-    const link = this.getFormattedLink(track);
-    const requester = track.requestedBy.user.username;
-    const duration = track.formattedDuration;
+  // private getNowPlayingInfo(track: Track, embed: EmbedBuilder): EmbedBuilder {
+  //   const thumbnailURL = track.ytInfo?.thumbnail_url as string;
+  //   const requester = track.requestedBy.user.username;
+  //   const duration = track.formattedDuration;
 
-    return embed
-      .setTitle("Now Playing:")
-      .setDescription(track.title)
-      .addFields(
-        { name: "Requested by:", value: requester, inline: true },
-        { name: "Duration:", value: duration, inline: true },
-      )
-      .setImage(link);
-
-    // return `Now Playing:\n${link}\n${duration}\nRequested by: ${requester}`;
-  }
+  //   return embed
+  //     .setTitle("Now Playing:")
+  //     .setDescription(track.title)
+  //     .addFields(
+  //       { name: "Requested by:", value: requester, inline: true },
+  //       { name: "Duration:", value: duration, inline: true },
+  //     )
+  //     .setImage(thumbnailURL);
+  // }
 }

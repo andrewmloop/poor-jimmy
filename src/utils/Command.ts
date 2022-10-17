@@ -1,4 +1,5 @@
 import { CommandInteraction, Embed, EmbedBuilder } from "discord.js";
+import { Track } from "./Bot";
 import { Client } from "./Client";
 
 export abstract class Command {
@@ -29,5 +30,20 @@ export abstract class Command {
   protected getErrorMessage(error: unknown): string {
     if (error instanceof Error) return error.message;
     return error as string;
+  }
+
+  protected getNowPlayingInfo(track: Track, embed: EmbedBuilder): EmbedBuilder {
+    const thumbnailURL = track.ytInfo?.thumbnail_url as string;
+    const requester = track.requestedBy.user.username;
+    const duration = track.formattedDuration;
+
+    return embed
+      .setTitle("Now Playing:")
+      .setDescription(track.title)
+      .addFields(
+        { name: "Requested by:", value: requester, inline: true },
+        { name: "Duration:", value: duration, inline: true },
+      )
+      .setImage(thumbnailURL);
   }
 }
