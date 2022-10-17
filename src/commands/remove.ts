@@ -1,4 +1,8 @@
-import { CommandInteraction, SlashCommandBuilder } from "discord.js";
+import {
+  CommandInteraction,
+  EmbedBuilder,
+  SlashCommandBuilder,
+} from "discord.js";
 import { Command } from "../utils/Command";
 
 export default class Remove extends Command {
@@ -23,8 +27,13 @@ export default class Remove extends Command {
     const guildId = interaction.guildId as string;
     const activeQueue = this.client.activeQueueMap.get(guildId);
 
+    const messageEmbed = new EmbedBuilder().setColor(0xff0000);
+
     if (!activeQueue) {
-      this.handleReply(interaction, "No queue found!");
+      messageEmbed.setDescription(
+        "No active queue found! Use /play or /switchq to start playing a queue.",
+      );
+      this.handleReply(interaction, messageEmbed);
       return;
     }
 
@@ -33,22 +42,29 @@ export default class Remove extends Command {
 
     // Error handling for an empty queue and improper index input
     if (!tracks || tracks.length === 0) {
-      this.handleReply(interaction, "No tracks in queue!");
+      messageEmbed.setDescription("There are no tracks queued!");
+      this.handleReply(interaction, messageEmbed);
       return;
     }
 
     if (index < 0 && index > tracks.length - 1) {
-      this.handleReply(interaction, "Choose an index in range!");
+      messageEmbed.setDescription("Please choose an index in range!");
+      this.handleReply(interaction, messageEmbed);
       return;
     }
 
     if (index === 0) {
-      this.handleReply(interaction, "Use /skip to remove the current track");
+      messageEmbed.setDescription("Use /skip to remove the current track");
+      this.handleReply(interaction, messageEmbed);
       return;
     }
 
     const removedSong = tracks.splice(index, 1)[0];
 
-    interaction.editReply(`Removed ${removedSong.title}`);
+    messageEmbed
+      .setColor(0x00ff00)
+      .setDescription(`Removed ${removedSong.title}`);
+
+    this.handleReply(interaction, messageEmbed);
   };
 }

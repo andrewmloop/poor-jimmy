@@ -1,4 +1,8 @@
-import { CommandInteraction, SlashCommandBuilder } from "discord.js";
+import {
+  CommandInteraction,
+  EmbedBuilder,
+  SlashCommandBuilder,
+} from "discord.js";
 import { Track } from "../utils/Bot";
 import { PlayCommand } from "../utils/PlayCommand";
 
@@ -16,26 +20,41 @@ export default class NowPlaying extends PlayCommand {
     const guildId = interaction.guildId as string;
     const activeQueue = this.client.activeQueueMap.get(guildId);
 
+    const messageEmbed = new EmbedBuilder().setColor(0xff0000);
+
     if (!activeQueue) {
-      this.handleReply(interaction, "No queue found!");
+      messageEmbed.setDescription(
+        "No active queue found! Use /play or /switchq to start playing a queue.",
+      );
+      this.handleReply(interaction, messageEmbed);
       return;
     }
 
     const track = activeQueue.tracks[0];
 
     if (track) {
-      const reply = this.getNowPlayingInfo(track);
+      const reply = this.getNowPlayingInfo(track, messageEmbed);
       this.handleReply(interaction, reply);
     } else {
-      this.handleReply(interaction, "No track playing!");
+      messageEmbed.setDescription("No track playing!");
+      this.handleReply(interaction, messageEmbed);
     }
   };
 
-  private getNowPlayingInfo(track: Track): string {
+  private getNowPlayingInfo(track: Track, embed: EmbedBuilder): EmbedBuilder {
     const link = this.getFormattedLink(track);
     const requester = track.requestedBy.user.username;
     const duration = track.formattedDuration;
 
-    return `Now Playing:\n${link}\n${duration}\nRequested by: ${requester}`;
+    return embed
+      .setTitle("Now Playing:")
+      .setDescription(track.title)
+      .addFields(
+        { name: "Requested by:", value: requester, inline: true },
+        { name: "Duration:", value: duration, inline: true },
+      )
+      .setImage(link);
+
+    // return `Now Playing:\n${link}\n${duration}\nRequested by: ${requester}`;
   }
 }

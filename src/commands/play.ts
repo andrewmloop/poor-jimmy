@@ -1,5 +1,6 @@
 import {
   CommandInteraction,
+  EmbedBuilder,
   Guild,
   GuildMember,
   SlashCommandBuilder,
@@ -31,6 +32,8 @@ export default class Play extends PlayCommand {
     const voiceChannel = member.voice.channel as VoiceChannel;
     const guild = interaction.guild as Guild;
 
+    const messageEmbed = new EmbedBuilder().setColor(0x00ff00);
+
     const reply = await this.play(
       url,
       textChannel,
@@ -39,7 +42,8 @@ export default class Play extends PlayCommand {
       member,
     );
 
-    this.handleReply(interaction, reply);
+    messageEmbed.setDescription(reply);
+    this.handleReply(interaction, messageEmbed);
   };
 
   // protected async play(

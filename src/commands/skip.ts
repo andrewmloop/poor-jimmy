@@ -1,9 +1,9 @@
+import { AudioPlayerStatus, entersState } from "@discordjs/voice";
 import {
-  AudioPlayerStatus,
-  entersState,
-  VoiceConnectionStatus,
-} from "@discordjs/voice";
-import { CommandInteraction, SlashCommandBuilder } from "discord.js";
+  CommandInteraction,
+  EmbedBuilder,
+  SlashCommandBuilder,
+} from "discord.js";
 import { PlayCommand } from "../utils/PlayCommand";
 
 export default class Skip extends PlayCommand {
@@ -21,15 +21,21 @@ export default class Skip extends PlayCommand {
     const activeQueue = this.client.activeQueueMap.get(guildId);
     const player = this.getAudioPlayer(guildId);
 
+    const messageEmbed = new EmbedBuilder().setColor(0xff0000);
+
     if (!activeQueue) {
-      this.handleReply(interaction, "No queue found!");
+      messageEmbed.setDescription(
+        "No active queue found! Use /play or /switchq to start playing a queue.",
+      );
+      this.handleReply(interaction, messageEmbed);
       return;
     }
 
     const tracks = activeQueue.tracks;
 
     if (!tracks || tracks.length === 0) {
-      this.handleReply(interaction, "There is nothing to skip!");
+      messageEmbed.setDescription("There is nothing to skip!");
+      this.handleReply(interaction, messageEmbed);
       return;
     }
 
@@ -42,14 +48,18 @@ export default class Skip extends PlayCommand {
 
     if (tracks.length > 0) {
       this.playTrack(tracks[0], player);
-      this.handleReply(interaction, "Track skipped!");
+      messageEmbed.setColor(0x00ff00).setDescription("Track skipped!");
+      this.handleReply(interaction, messageEmbed);
     } else {
       player.stop();
       try {
         await entersState(player, AudioPlayerStatus.Idle, 5_000);
-        this.handleReply(interaction, "The queue has ended!");
+
+        messageEmbed.setColor(0x00ff00).setDescription("The queue has ended!");
+        this.handleReply(interaction, messageEmbed);
       } catch (error) {
-        this.handleReply(interaction, "Error with /skip command! Aborting!");
+        messageEmbed.setDescription("Error skipping track!");
+        this.handleReply(interaction, messageEmbed);
       }
     }
   };

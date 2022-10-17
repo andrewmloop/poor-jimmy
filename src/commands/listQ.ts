@@ -1,4 +1,8 @@
-import { CommandInteraction, SlashCommandBuilder } from "discord.js";
+import {
+  CommandInteraction,
+  EmbedBuilder,
+  SlashCommandBuilder,
+} from "discord.js";
 import { Command } from "../utils/Command";
 
 export default class ListQ extends Command {
@@ -15,18 +19,28 @@ export default class ListQ extends Command {
     const guildId = interaction.guildId as string;
     const queueList = this.client.queueListMap.get(guildId);
 
+    const messageEmbed = new EmbedBuilder().setColor(0xff0000);
+
     if (!queueList || queueList.length === 0) {
-      await interaction.editReply("There are no queues currently!");
+      messageEmbed.setDescription(
+        "This guild has no queues! Use /createq to make one.",
+      );
+      this.handleReply(interaction, messageEmbed);
       return;
     }
 
-    let replyString = "Queues:\n";
+    let replyString = "";
     queueList.forEach((queue, index) => {
       replyString =
         replyString + this.formatListItem(queue.name as string, index);
     });
 
-    await interaction.editReply(replyString);
+    messageEmbed
+      .setColor(0x00ff00)
+      .setTitle("Queue List")
+      .addFields({ name: "Queues", value: replyString });
+
+    this.handleReply(interaction, messageEmbed);
   };
 
   private formatListItem(name: string, index: number): string {

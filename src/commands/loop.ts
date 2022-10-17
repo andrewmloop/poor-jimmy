@@ -1,4 +1,8 @@
-import { CommandInteraction, SlashCommandBuilder } from "discord.js";
+import {
+  CommandInteraction,
+  EmbedBuilder,
+  SlashCommandBuilder,
+} from "discord.js";
 import { Command } from "../utils/Command";
 
 export default class Loop extends Command {
@@ -15,17 +19,24 @@ export default class Loop extends Command {
     const guildId = interaction.guildId as string;
     const activeQueue = this.client.activeQueueMap.get(guildId);
 
+    const messageEmbed = new EmbedBuilder().setColor(0xff0000);
+
     if (!activeQueue) {
-      this.handleReply(interaction, "No queue found!");
+      messageEmbed.setDescription(
+        "No active queue found! Use /play or /switchq to start playing a queue.",
+      );
+      this.handleReply(interaction, messageEmbed);
       return;
     }
 
     activeQueue.isLoop = !activeQueue.isLoop;
 
     if (activeQueue.isLoop) {
-      this.handleReply(interaction, "Queue looping enabled!");
+      messageEmbed.setColor(0x00ff00).setDescription("Queue looping enabled!");
+      this.handleReply(interaction, messageEmbed);
     } else {
-      this.handleReply(interaction, "Queue looping disabled!");
+      messageEmbed.setColor(0x00ff00).setDescription("Queue looping disabled!");
+      this.handleReply(interaction, messageEmbed);
     }
   };
 }

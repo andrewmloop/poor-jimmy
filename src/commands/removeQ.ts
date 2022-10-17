@@ -1,4 +1,8 @@
-import { CommandInteraction, SlashCommandBuilder } from "discord.js";
+import {
+  CommandInteraction,
+  EmbedBuilder,
+  SlashCommandBuilder,
+} from "discord.js";
 import { Command } from "../utils/Command";
 
 export default class RemoveQ extends Command {
@@ -24,17 +28,23 @@ export default class RemoveQ extends Command {
     const queueList = this.client.queueListMap.get(guildId);
     const option = interaction.options.get("name")?.value as string;
 
+    const messageEmbed = new EmbedBuilder().setColor(0xff0000);
+
     // Make sure the queue to be removed is not the current queue playing
     if (activeQueue && activeQueue.name === option) {
-      this.handleReply(
-        interaction,
+      messageEmbed.setDescription(
         "You can't remove the active queue. Please /switchq to another before removing!",
       );
+
+      this.handleReply(interaction, messageEmbed);
       return;
     }
 
-    if (!queueList) {
-      this.handleReply(interaction, "Unable to find queue list!");
+    if (!queueList || queueList.length === 0) {
+      messageEmbed.setDescription(
+        "This guild has no queues! Use /createq to make one.",
+      );
+      this.handleReply(interaction, messageEmbed);
       return;
     }
 
@@ -49,9 +59,13 @@ export default class RemoveQ extends Command {
 
     // Edit reply
     if (isSuccess) {
-      this.handleReply(interaction, `Successfully removed ${option}`);
+      messageEmbed
+        .setColor(0x00ff00)
+        .setDescription(`Successfully removed ${option}`);
+      this.handleReply(interaction, messageEmbed);
     } else {
-      this.handleReply(interaction, `Unable to find ${option}`);
+      messageEmbed.setDescription(`Unable to find ${option}`);
+      this.handleReply(interaction, messageEmbed);
     }
   };
 }

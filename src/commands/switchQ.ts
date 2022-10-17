@@ -1,5 +1,9 @@
 import { AudioPlayerStatus, entersState } from "@discordjs/voice";
-import { CommandInteraction, SlashCommandBuilder } from "discord.js";
+import {
+  CommandInteraction,
+  EmbedBuilder,
+  SlashCommandBuilder,
+} from "discord.js";
 import { PlayCommand } from "../utils/PlayCommand";
 
 export default class SwitchQ extends PlayCommand {
@@ -24,13 +28,19 @@ export default class SwitchQ extends PlayCommand {
     const queueList = this.client.queueListMap.get(guildId);
     const queueOption = interaction.options.get("queue")?.value;
 
+    const messageEmbed = new EmbedBuilder().setColor(0xff0000);
+
     if (!queueList) {
-      this.handleReply(interaction, "No queues found!");
+      messageEmbed.setDescription(
+        "No queues found! Use /createq to create a new queue.",
+      );
+      this.handleReply(interaction, messageEmbed);
       return;
     }
 
     if (activeQueue && activeQueue.name === queueOption) {
-      this.handleReply(interaction, `${queueOption} is already active!`);
+      messageEmbed.setDescription(`${queueOption} is already active!`);
+      this.handleReply(interaction, messageEmbed);
       return;
     }
 
@@ -39,10 +49,8 @@ export default class SwitchQ extends PlayCommand {
     );
 
     if (!queueToSwitchTo) {
-      this.handleReply(
-        interaction,
-        `Queue with name: ${queueOption} could not be found!`,
-      );
+      messageEmbed.setDescription(`${queueOption} could not be found!`);
+      this.handleReply(interaction, messageEmbed);
       return;
     }
 
@@ -56,17 +64,17 @@ export default class SwitchQ extends PlayCommand {
         try {
           await entersState(player, AudioPlayerStatus.Idle, 5_000);
         } catch (error) {
-          this.handleReply(interaction, "Error stopping player, aborting!");
+          messageEmbed.setDescription("Error stopping player, aborting!");
+          this.handleReply(interaction, messageEmbed);
           return;
         }
       }
     }
 
     this.client.activeQueueMap.set(guildId, queueToSwitchTo);
-    this.handleReply(
-      interaction,
-      `Switched to queue: ${queueToSwitchTo.name}!`,
-    );
+
+    messageEmbed.setDescription(`Switched to ${queueToSwitchTo.name}!`);
+    this.handleReply(interaction, messageEmbed);
 
     this.playFirstTrack(guildId, this.client.activeQueueMap);
   };
