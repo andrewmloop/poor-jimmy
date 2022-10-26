@@ -41,19 +41,4 @@ export default class NowPlaying extends PlayCommand {
       this.handleReply(interaction, messageEmbed);
     }
   };
-
-  // private getNowPlayingInfo(track: Track, embed: EmbedBuilder): EmbedBuilder {
-  //   const thumbnailURL = track.ytInfo?.thumbnail_url as string;
-  //   const requester = track.requestedBy.user.username;
-  //   const duration = track.formattedDuration;
-
-  //   return embed
-  //     .setTitle("Now Playing:")
-  //     .setDescription(track.title)
-  //     .addFields(
-  //       { name: "Requested by:", value: requester, inline: true },
-  //       { name: "Duration:", value: duration, inline: true },
-  //     )
-  //     .setImage(thumbnailURL);
-  // }
 }

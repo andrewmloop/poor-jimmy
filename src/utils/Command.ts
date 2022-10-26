@@ -33,17 +33,17 @@ export abstract class Command {
   }
 
   protected getNowPlayingInfo(track: Track, embed: EmbedBuilder): EmbedBuilder {
-    const thumbnailURL = track.info?.thumbnail_url as string;
+    const thumbnailURL = track.info.videoDetails.thumbnails[0].url;
     const requester = track.requestedBy.user.username;
     const duration = track.formattedDuration;
 
     return embed
       .setTitle("Now Playing:")
       .setDescription(track.title)
+      .setImage(thumbnailURL)
       .addFields(
         { name: "Requested by:", value: requester, inline: true },
         { name: "Duration:", value: duration, inline: true },
-      )
-      .setImage(thumbnailURL);
+      );
   }
 }
