@@ -114,17 +114,11 @@ export abstract class PlayCommand extends Command {
     return activeQ?.player as AudioPlayer;
   }
 
-  protected async fetchTrackInfo(
-    url: string,
-  ): Promise<ytdl.videoInfo | spdl.trackInfo> {
+  protected async fetchTrackInfo(url: string): Promise<ytdl.videoInfo> {
     let songInfo = null;
 
     try {
-      if (spdl.validateURL(url)) {
-        console.log("HERE");
-        songInfo = await spdl.getInfo(url);
-        console.log(songInfo);
-      } else if (ytdl.validateURL(url)) {
+      if (ytdl.validateURL(url)) {
         songInfo = await ytdl.getInfo(url);
       } else {
         throw Error("Unable to find track!");
@@ -141,36 +135,11 @@ export abstract class PlayCommand extends Command {
     url: string,
     member: GuildMember,
   ): Promise<Track | Error> {
-    if (spdl.validateURL(url)) {
-      let trackInfo: spdl.trackInfo;
-
-      try {
-        trackInfo = (await this.fetchTrackInfo(url)) as spdl.trackInfo;
-      } catch (error) {
-        return this.handleError(error);
-      }
-
-      if (trackInfo === null) {
-        return this.handleError(`Could not find track!`);
-      }
-
-      const duration = trackInfo.duration as number;
-      const track: Track = {
-        ytInfo: null,
-        spInfo: trackInfo,
-        title: trackInfo.title,
-        url: trackInfo.url,
-        duration: duration,
-        formattedDuration: this.formatDuration(duration),
-        requestedBy: member,
-      };
-
-      return track;
-    } else if (ytdl.validateURL(url)) {
+    if (ytdl.validateURL(url)) {
       let trackInfo: ytdl.videoInfo;
 
       try {
-        trackInfo = (await this.fetchTrackInfo(url)) as ytdl.videoInfo;
+        trackInfo = await this.fetchTrackInfo(url);
       } catch (error) {
         return this.handleError(error);
       }
@@ -181,8 +150,7 @@ export abstract class PlayCommand extends Command {
 
       const duration = parseInt(trackInfo.videoDetails.lengthSeconds);
       const track: Track = {
-        ytInfo: trackInfo,
-        spInfo: null,
+        info: trackInfo,
         title: trackInfo.videoDetails.title,
         url: trackInfo.videoDetails.video_url,
         duration: duration,
@@ -197,7 +165,7 @@ export abstract class PlayCommand extends Command {
   }
 
   protected async playTrack(track: Track, player: AudioPlayer): Promise<void> {
-    if (track.spInfo !== null) {
+    if (track.info !== null) {
       const stream = await spdl(track.url, {
         filter: "audioonly",
       });

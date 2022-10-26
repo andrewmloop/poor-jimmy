@@ -1,11 +1,9 @@
 import { AudioPlayer } from "@discordjs/voice";
 import { GuildMember, Message, TextChannel, VoiceChannel } from "discord.js";
-import spdl from "spdl-core";
 import ytdl from "ytdl-core";
 
 export interface Track {
-  ytInfo: ytdl.videoInfo | null;
-  spInfo: spdl.trackInfo | null;
+  info: ytdl.videoInfo;
   title: string;
   url: string;
   duration: number;

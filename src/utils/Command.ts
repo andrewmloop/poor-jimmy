@@ -33,7 +33,7 @@ export abstract class Command {
   }
 
   protected getNowPlayingInfo(track: Track, embed: EmbedBuilder): EmbedBuilder {
-    const thumbnailURL = track.ytInfo?.thumbnail_url as string;
+    const thumbnailURL = track.info?.thumbnail_url as string;
     const requester = track.requestedBy.user.username;
     const duration = track.formattedDuration;
 
