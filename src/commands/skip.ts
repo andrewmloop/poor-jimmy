@@ -40,24 +40,27 @@ export default class Skip extends PlayCommand {
     }
 
     const current = tracks[0];
-    console.log(current);
 
     if (activeQueue.isLoop) {
       tracks.push(current);
     }
     tracks.shift();
-    console.log(tracks);
 
     if (tracks.length > 0) {
+      // This isn't needed, but pausing the player before playing
+      // the next track is less jarring
+      player.pause();
+      await entersState(player, AudioPlayerStatus.Paused, 5_000);
+
       this.playTrack(guildId);
+
       messageEmbed.setColor(0x00ff00);
       let reply = this.getNowPlayingInfo(tracks[0], messageEmbed);
       this.handleReply(interaction, reply);
     } else {
-      player.stop();
       try {
+        player.stop();
         await entersState(player, AudioPlayerStatus.Idle, 5_000);
-
         messageEmbed.setColor(0x00ff00).setDescription("The queue has ended!");
         this.handleReply(interaction, messageEmbed);
       } catch (error) {
