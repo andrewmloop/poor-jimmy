@@ -1,5 +1,6 @@
 import {
   EmbedBuilder,
+  Events,
   Guild,
   GuildMember,
   TextChannel,
@@ -24,29 +25,9 @@ import {
 } from "@discordjs/voice";
 import { Client } from "./Client";
 
-/**
- * This class is a mess and needs refactoring. A lot of this logic
- * was ripped from the /play command because other commands need
- * access to the logic to gracefully start and stop the player
- * as tracks/queues are manipulated
- */
 export abstract class PlayCommand extends Command {
   public constructor(client: Client) {
     super(client);
-  }
-
-  protected formatDuration(seconds: number): string {
-    if (seconds === 0) return "livestream";
-
-    const date = new Date(seconds * 1000).toISOString();
-    const formatted =
-      seconds < 3600 ? date.substring(14, 19) : date.substring(12, 19);
-
-    return `[${formatted}]`;
-  }
-
-  protected getFormattedLink(track: Track): string {
-    return `${track.title}\n(${track.url})`;
   }
 
   protected async play(
@@ -62,7 +43,7 @@ export abstract class PlayCommand extends Command {
       return messageEmbed.setDescription(track.message);
     }
 
-    const serverQueue = this.addToQueue(
+    const serverQueue = this.addToActiveQueue(
       track,
       guild,
       voiceChannel,
@@ -70,9 +51,9 @@ export abstract class PlayCommand extends Command {
     );
 
     if (!serverQueue.isPlaying) {
-      await this.playFirstTrack(guild.id, this.client.activeQueueMap);
+      await this.playTrack(guild.id);
       messageEmbed.setColor(0x00ff00);
-      return this.getNowPlayingMessage(serverQueue, messageEmbed);
+      return this.getNowPlayingInfo(track, messageEmbed);
     }
 
     return messageEmbed
@@ -80,13 +61,18 @@ export abstract class PlayCommand extends Command {
       .setDescription(`${track.title} added to the queue!`);
   }
 
-  protected addToQueue(
+  /**
+   * Grabs the guild's active queue and adds the passed in track
+   * to the end of it's track list. It creates a default queue if
+   * an active queue is not found
+   */
+  protected addToActiveQueue(
     track: Track,
     guild: Guild,
     voiceChannel: VoiceChannel,
     textChannel: TextChannel,
   ): Queue {
-    let activeQueue: Queue = this.client.activeQueueMap.get(guild.id) as Queue;
+    let activeQueue = this.client.activeQueueMap.get(guild.id) as Queue;
 
     if (activeQueue === undefined) {
       activeQueue = {
@@ -114,12 +100,12 @@ export abstract class PlayCommand extends Command {
     return activeQ?.player as AudioPlayer;
   }
 
-  protected async fetchTrackInfo(url: string): Promise<ytdl.videoInfo> {
-    let songInfo = null;
+  protected async fetchVideoInfo(url: string): Promise<ytdl.videoInfo> {
+    let videoInfo = null;
 
     try {
       if (ytdl.validateURL(url)) {
-        songInfo = await ytdl.getInfo(url);
+        videoInfo = await ytdl.getInfo(url);
       } else {
         throw Error("Unable to find track!");
       }
@@ -128,7 +114,7 @@ export abstract class PlayCommand extends Command {
       throw Error("Error getting track details");
     }
 
-    return songInfo;
+    return videoInfo;
   }
 
   protected async fetchTrack(
@@ -139,7 +125,7 @@ export abstract class PlayCommand extends Command {
       let trackInfo: ytdl.videoInfo;
 
       try {
-        trackInfo = await this.fetchTrackInfo(url);
+        trackInfo = await this.fetchVideoInfo(url);
       } catch (error) {
         return this.handleError(error);
       }
@@ -164,63 +150,35 @@ export abstract class PlayCommand extends Command {
     }
   }
 
-  protected async playTrack(track: Track, player: AudioPlayer): Promise<void> {
-    if (track.info !== null) {
-      const stream = await spdl(track.url, {
-        filter: "audioonly",
-      });
+  /**
+   * Plays the first track in a guild's active queue.
+   */
+  protected async playTrack(guildId: string): Promise<void> {
+    const activeQueue = this.client.activeQueueMap.get(guildId);
 
-      const resource = createAudioResource(stream, {
-        inputType: StreamType.Arbitrary,
-      });
+    if (!activeQueue) return;
 
-      player.stop();
-      await entersState(player, AudioPlayerStatus.Idle, 5_000);
-
-      player.play(resource);
-      await entersState(player, AudioPlayerStatus.Playing, 5_000);
-    } else {
-      const stream = ytdl(track.url, {
-        filter: "audioonly",
-        highWaterMark: 1 << 25,
-      });
-
-      const resource = createAudioResource(stream, {
-        inputType: StreamType.Arbitrary,
-      });
-
-      player.stop();
-      await entersState(player, AudioPlayerStatus.Idle, 5_000);
-
-      player.play(resource);
-      await entersState(player, AudioPlayerStatus.Playing, 5_000);
-    }
-  }
-
-  protected async playFirstTrack(
-    guildId: string,
-    queueMap: Map<string, Queue>,
-  ): Promise<void> {
-    const serverQueue = queueMap.get(guildId);
-
-    if (!serverQueue) return;
-
-    if (serverQueue.tracks.length === 0) {
-      return this.handleEmptyQueue(guildId, queueMap, serverQueue, 60_000);
+    if (activeQueue.tracks.length === 0) {
+      return this.handleEmptyQueue(guildId);
     }
 
-    const track = serverQueue.tracks[0];
-    const connection = await this.connectToChannel(serverQueue.voiceChannel);
-    serverQueue.player = await this.createAudioPlayer(track);
-    connection.subscribe(serverQueue.player);
-    serverQueue.isPlaying = true;
+    const firstTrack = activeQueue.tracks[0];
+    const connection = await this.connectToChannel(activeQueue.voiceChannel);
+    activeQueue.player = await this.createAudioPlayer(firstTrack);
+    connection.subscribe(activeQueue.player);
+    activeQueue.isPlaying = true;
 
-    serverQueue.player.on(AudioPlayerStatus.Idle, () => {
-      serverQueue.isPlaying = false;
-      this.handleTrackFinish(guildId, queueMap, serverQueue);
+    activeQueue.player.on(AudioPlayerStatus.Idle, () => {
+      activeQueue.isPlaying = false;
+      this.handleTrackFinish(guildId);
     });
   }
 
+  /**
+   * Creates a VoiceConnection to a passed in VoiceChannel. Once the
+   * VoiceConnection is ready, returns the VoiceConnection. Destroys the
+   * connection and throws an error if something goes wrong.
+   */
   protected async connectToChannel(
     channel: VoiceChannel,
   ): Promise<VoiceConnection> {
@@ -263,70 +221,78 @@ export abstract class PlayCommand extends Command {
     }
   }
 
+  /**
+   * Takes in a Track, converts the Track's url to a stream, creates
+   * an AudioResource from the stream and then creates an AudioPlayer
+   * for that resource to play. Returns the newly created player.
+   */
   private async createAudioPlayer(track: Track): Promise<AudioPlayer> {
     const player = createAudioPlayer();
-    let stream: any;
-    if (spdl.validateURL(track.url)) {
-      stream = spdl(track.url, {
-        filter: "audioonly",
-      });
-    } else {
-      stream = ytdl(track.url, {
-        filter: "audioonly",
-        highWaterMark: 1 << 25,
-      });
-    }
+
+    let stream = ytdl(track.url, {
+      filter: "audioonly",
+      highWaterMark: 1 << 25,
+    });
+
     const resource = createAudioResource(stream, {
       inputType: StreamType.Arbitrary,
     });
+
     player.play(resource);
     return await entersState(player, AudioPlayerStatus.Playing, 5_000);
   }
 
-  private handleTrackFinish(
-    guildId: string,
-    queueMap: Map<string, Queue>,
-    serverQueue: Queue,
-  ): void {
-    if (serverQueue != null) {
-      const track = serverQueue.tracks[0];
-      if (serverQueue.isLoop) {
-        serverQueue.tracks.push(track);
+  /**
+   * When the current track of the guild's active queue ends,
+   * push the current track to the end of the list if isLoop is on,
+   * and then play the next track
+   */
+  private handleTrackFinish(guildId: string): void {
+    const activeQueue = this.client.activeQueueMap.get(guildId) as Queue;
+
+    if (activeQueue !== null) {
+      const track = activeQueue.tracks[0];
+      if (activeQueue.isLoop) {
+        activeQueue.tracks.push(track);
       }
-      serverQueue.tracks.shift();
-      this.playFirstTrack(guildId, queueMap);
+      activeQueue.tracks.shift();
+      this.playTrack(guildId);
     }
   }
 
-  private handleEmptyQueue(
-    guildId: string,
-    queueMap: Map<string, Queue>,
-    serverQueue: Queue,
-    timeoutDuration: number,
-  ): void {
+  /**
+   * Checks if the active queue is empty or if there are no
+   * members in the voice chat every 5 minutes. If so, sends a message
+   * and disconnects.
+   */
+  private handleEmptyQueue(guildId: string): void {
     const connection = getVoiceConnection(guildId);
-    if (serverQueue.voiceChannel.members.size === 0) {
-      connection?.destroy();
-      queueMap.delete(guildId);
-      return;
-    }
+    const activeQueue = this.client.activeQueueMap.get(guildId) as Queue;
 
     setTimeout(() => {
-      if (serverQueue.tracks.length === 0) {
+      if (
+        activeQueue.tracks.length === 0 ||
+        activeQueue.voiceChannel.members.size === 0
+      ) {
         connection?.destroy();
-        queueMap.delete(guildId);
+        this.client.activeQueueMap.delete(guildId);
+        this.client.queueListMap.delete(guildId);
         return;
       }
-    }, timeoutDuration);
+    }, 300_000);
   }
 
-  protected getNowPlayingMessage(
-    serverQueue: Queue,
-    embed: EmbedBuilder,
-  ): EmbedBuilder {
-    const track = serverQueue.tracks[0];
-    const link = this.getFormattedLink(track);
+  /**
+   * Takes in a number of seconds and formats it to a string
+   * for displaying a tracks duration
+   */
+  protected formatDuration(seconds: number): string {
+    if (seconds === 0) return "livestream";
 
-    return this.getNowPlayingInfo(track, embed);
+    const date = new Date(seconds * 1000).toISOString();
+    const formatted =
+      seconds < 3600 ? date.substring(14, 19) : date.substring(12, 19);
+
+    return `[${formatted}]`;
   }
 }

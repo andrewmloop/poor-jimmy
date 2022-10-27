@@ -78,6 +78,6 @@ export default class SwitchQ extends PlayCommand {
       .setDescription(`Switched to ${queueToSwitchTo.name}!`);
     this.handleReply(interaction, messageEmbed);
 
-    this.playFirstTrack(guildId, this.client.activeQueueMap);
+    this.playTrack(guildId);
   };
 }

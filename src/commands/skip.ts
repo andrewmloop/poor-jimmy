@@ -40,16 +40,19 @@ export default class Skip extends PlayCommand {
     }
 
     const current = tracks[0];
+    console.log(current);
 
     if (activeQueue.isLoop) {
       tracks.push(current);
     }
     tracks.shift();
+    console.log(tracks);
 
     if (tracks.length > 0) {
-      this.playTrack(tracks[0], player);
-      messageEmbed.setColor(0x00ff00).setDescription("Track skipped!");
-      this.handleReply(interaction, messageEmbed);
+      this.playTrack(guildId);
+      messageEmbed.setColor(0x00ff00);
+      let reply = this.getNowPlayingInfo(tracks[0], messageEmbed);
+      this.handleReply(interaction, reply);
     } else {
       player.stop();
       try {
