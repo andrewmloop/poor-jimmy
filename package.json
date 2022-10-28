@@ -4,7 +4,6 @@
   "description": "A Discord bot to manage music.",
   "main": "app.js",
   "scripts": {
-    "prestart": "npm run build",
     "start": "node ./build/app.js",
     "build": "tsc --build",
     "watch": "tsc --watch"
