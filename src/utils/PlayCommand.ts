@@ -50,7 +50,10 @@ export abstract class PlayCommand extends Command {
       textChannel,
     );
 
-    if (!serverQueue.isPlaying) {
+    if (
+      !serverQueue.isPlaying &&
+      serverQueue.player?.state.status !== AudioPlayerStatus.Paused
+    ) {
       await this.playTrack(guild.id);
       messageEmbed.setColor(0x00ff00);
       return this.getNowPlayingInfo(track, messageEmbed);
@@ -58,7 +61,7 @@ export abstract class PlayCommand extends Command {
 
     return messageEmbed
       .setColor(0x00ff00)
-      .setDescription(`${track.title} added to the queue!`);
+      .setDescription(`**${track.title}** added to the queue!`);
   }
 
   /**
