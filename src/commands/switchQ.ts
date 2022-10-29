@@ -39,7 +39,7 @@ export default class SwitchQ extends PlayCommand {
     }
 
     if (activeQueue && activeQueue.name === queueOption) {
-      messageEmbed.setDescription(`${queueOption} is already active!`);
+      messageEmbed.setDescription(`**${queueOption}** is already active!`);
       this.handleReply(interaction, messageEmbed);
       return;
     }
@@ -49,7 +49,7 @@ export default class SwitchQ extends PlayCommand {
     );
 
     if (!queueToSwitchTo) {
-      messageEmbed.setDescription(`${queueOption} could not be found!`);
+      messageEmbed.setDescription(`**${queueOption}** could not be found!`);
       this.handleReply(interaction, messageEmbed);
       return;
     }
@@ -75,7 +75,7 @@ export default class SwitchQ extends PlayCommand {
 
     messageEmbed
       .setColor(0x00ff00)
-      .setDescription(`Switched to ${queueToSwitchTo.name}!`);
+      .setDescription(`Switched to **${queueToSwitchTo.name}**!`);
     this.handleReply(interaction, messageEmbed);
 
     this.playTrack(guildId);

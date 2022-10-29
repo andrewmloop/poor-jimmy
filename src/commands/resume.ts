@@ -44,7 +44,7 @@ export default class Resume extends Command {
 
       activeQueue.isPlaying = true;
 
-      messageEmbed.setColor(0x00ff00).setDescription("Track resumed!");
+      messageEmbed.setColor(0x00ff00).setDescription("Track **resumed**!");
       this.handleReply(interaction, messageEmbed);
     } catch (error) {
       messageEmbed.setDescription("Unable to resume track!");

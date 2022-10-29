@@ -59,7 +59,7 @@ export default class CreateQ extends Command {
 
       messageEmbed
         .setColor(0x00ff00)
-        .setDescription(`${queueName} queue created!`);
+        .setDescription(`**${queueName}** queue created!`);
 
       this.handleReply(interaction, messageEmbed);
     } else {

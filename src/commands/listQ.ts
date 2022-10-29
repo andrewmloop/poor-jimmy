@@ -7,7 +7,7 @@ import { Command } from "../utils/Command";
 
 export default class ListQ extends Command {
   name = "listqueues";
-  description = "Display a list of created queues";
+  description = "Display a list of the guild's queues";
 
   data = new SlashCommandBuilder()
     .setName(this.name)

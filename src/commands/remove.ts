@@ -63,7 +63,7 @@ export default class Remove extends Command {
 
     messageEmbed
       .setColor(0x00ff00)
-      .setDescription(`Removed ${removedSong.title}`);
+      .setDescription(`Removed **${removedSong.title}**`);
 
     this.handleReply(interaction, messageEmbed);
   };

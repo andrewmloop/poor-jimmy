@@ -32,10 +32,14 @@ export default class Loop extends Command {
     activeQueue.isLoop = !activeQueue.isLoop;
 
     if (activeQueue.isLoop) {
-      messageEmbed.setColor(0x00ff00).setDescription("Queue looping enabled!");
+      messageEmbed
+        .setColor(0x00ff00)
+        .setDescription("Queue looping **enabled**!");
       this.handleReply(interaction, messageEmbed);
     } else {
-      messageEmbed.setColor(0x00ff00).setDescription("Queue looping disabled!");
+      messageEmbed
+        .setColor(0x00ff00)
+        .setDescription("Queue looping **disabled**!");
       this.handleReply(interaction, messageEmbed);
     }
   };

@@ -44,7 +44,7 @@ export default class Pause extends Command {
 
       activeQueue.isPlaying = false;
 
-      messageEmbed.setColor(0x00ff00).setDescription("Track paused!");
+      messageEmbed.setColor(0x00ff00).setDescription("Track **paused**!");
       this.handleReply(interaction, messageEmbed);
     } catch (error) {
       messageEmbed.setDescription("Unable to pause track!");

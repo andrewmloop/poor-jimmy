@@ -59,7 +59,7 @@ export default class List extends Command {
 
   private formatListItem(title: string, index: number): string {
     if (index === 0) {
-      return `Current: ${title}\n`;
+      return `Current: ${title}\n\n`;
     } else {
       return `#${index}: ${title}\n`;
     }

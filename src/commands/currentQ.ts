@@ -30,7 +30,7 @@ export default class CurrentQ extends Command {
     }
 
     messageEmbed
-      .setTitle("Current Queue")
+      .setTitle("Current Active Queue")
       .setColor(0x00ff00)
       .setDescription(activeQueue.name);
 

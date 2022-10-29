@@ -40,7 +40,7 @@ export default class ListQTracks extends Command {
     let foundQueue = queueList.find((queue) => queue.name === queueOption);
     if (!foundQueue) {
       messageEmbed.setDescription(
-        `No queue was found with the name: ${queueOption}!`,
+        `No queue was found with the name: **${queueOption}**!`,
       );
       this.handleReply(interaction, messageEmbed);
       return;

@@ -74,7 +74,7 @@ export default class AddToQ extends PlayCommand {
 
       messageEmbed
         .setColor(0x00ff00)
-        .setDescription(`${track.title} added to ${queueToAdd.name}`);
+        .setDescription(`**${track.title}** added to **${queueToAdd.name}**!`);
 
       this.handleReply(interaction, messageEmbed);
     } catch (error) {

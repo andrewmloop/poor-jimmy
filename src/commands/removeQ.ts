@@ -61,10 +61,10 @@ export default class RemoveQ extends Command {
     if (isSuccess) {
       messageEmbed
         .setColor(0x00ff00)
-        .setDescription(`Successfully removed ${option}`);
+        .setDescription(`Successfully removed **${option}**!`);
       this.handleReply(interaction, messageEmbed);
     } else {
-      messageEmbed.setDescription(`Unable to find ${option}`);
+      messageEmbed.setDescription(`Unable to find **${option}**`);
       this.handleReply(interaction, messageEmbed);
     }
   };
