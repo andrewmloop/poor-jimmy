@@ -13,6 +13,7 @@ import ping from "./ping";
 import play from "./play";
 import remove from "./remove";
 import removeQ from "./removeQ";
+import restart from "./restart";
 import resume from "./resume";
 import skip from "./skip";
 import switchQ from "./switchQ";
@@ -33,6 +34,7 @@ export const commandIndex = [
   play,
   remove,
   removeQ,
+  restart,
   resume,
   skip,
   switchQ,
