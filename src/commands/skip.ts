@@ -1,10 +1,7 @@
 import { AudioPlayerStatus, entersState } from "@discordjs/voice";
-import {
-  CommandInteraction,
-  EmbedBuilder,
-  SlashCommandBuilder,
-} from "discord.js";
+import { CommandInteraction, SlashCommandBuilder } from "discord.js";
 import { PlayCommand } from "../utils/PlayCommand";
+import ResponseBuilder from "../utils/ResponseBuilder";
 
 export default class Skip extends PlayCommand {
   name = "skip";
@@ -21,21 +18,21 @@ export default class Skip extends PlayCommand {
     const activeQueue = this.client.activeQueueMap.get(guildId);
     const player = this.getAudioPlayer(guildId);
 
-    const messageEmbed = new EmbedBuilder().setColor(0xff0000);
+    const response = new ResponseBuilder().setFailure();
 
     if (!activeQueue) {
-      messageEmbed.setDescription(
+      response.setDescription(
         "No active queue found! Use /play or /switchq to start playing a queue.",
       );
-      this.handleReply(interaction, messageEmbed);
+      this.handleReply(interaction, response);
       return;
     }
 
     const tracks = activeQueue.tracks;
 
     if (!tracks || tracks.length === 0) {
-      messageEmbed.setDescription("There is nothing to skip!");
-      this.handleReply(interaction, messageEmbed);
+      response.setDescription("There is nothing to skip!");
+      this.handleReply(interaction, response);
       return;
     }
 
@@ -46,27 +43,23 @@ export default class Skip extends PlayCommand {
     }
     tracks.shift();
 
-    if (tracks.length > 0) {
-      // This isn't needed, but pausing the player before playing
-      // the next track is less jarring
+    try {
       player.pause();
       await entersState(player, AudioPlayerStatus.Paused, 5_000);
 
-      this.playTrack(guildId);
+      response.setSuccess();
 
-      messageEmbed.setColor(0x00ff00);
-      let reply = this.getNowPlayingInfo(tracks[0], messageEmbed);
-      this.handleReply(interaction, reply);
-    } else {
-      try {
-        player.stop();
-        await entersState(player, AudioPlayerStatus.Idle, 5_000);
-        messageEmbed.setColor(0x00ff00).setDescription("The queue has ended!");
-        this.handleReply(interaction, messageEmbed);
-      } catch (error) {
-        messageEmbed.setDescription("Error skipping track!");
-        this.handleReply(interaction, messageEmbed);
+      if (tracks.length > 0) {
+        this.playTrack(guildId);
+        let reply = this.getNowPlayingInfo(tracks[0], response);
+        this.handleReply(interaction, reply);
+      } else {
+        response.setDescription("The queue has ended");
+        this.handleReply(interaction, response);
       }
+    } catch (error) {
+      response.setDescription("Error skipping track!");
+      this.handleReply(interaction, response);
     }
   };
 }

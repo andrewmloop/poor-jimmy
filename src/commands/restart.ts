@@ -2,7 +2,7 @@ import { AudioPlayerStatus, entersState } from "@discordjs/voice";
 import { CommandInteraction, SlashCommandBuilder } from "discord.js";
 import { Track } from "../utils/Bot";
 import { PlayCommand } from "../utils/PlayCommand";
-import ResponseBuilder from "../utils/Response";
+import ResponseBuilder from "../utils/ResponseBuilder";
 
 export default class Restart extends PlayCommand {
   name = "restart";

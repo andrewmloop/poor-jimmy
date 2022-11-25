@@ -24,6 +24,7 @@ import {
   VoiceConnectionStatus,
 } from "@discordjs/voice";
 import { Client } from "./Client";
+import ResponseBuilder from "./ResponseBuilder";
 
 export abstract class PlayCommand extends Command {
   public constructor(client: Client) {
@@ -259,7 +260,16 @@ export abstract class PlayCommand extends Command {
         activeQueue.tracks.push(track);
       }
       activeQueue.tracks.shift();
-      this.playTrack(guildId);
+
+      if (activeQueue.tracks.length === 0) {
+        let response = new ResponseBuilder()
+          .setSuccess()
+          .setDescription("The queue has ended!");
+
+        activeQueue.textChannel.send({ embeds: [response] });
+      } else {
+        this.playTrack(guildId);
+      }
     }
   }
 
