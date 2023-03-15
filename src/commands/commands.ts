@@ -1,9 +1,6 @@
-import {
-  CommandInteraction,
-  EmbedBuilder,
-  SlashCommandBuilder,
-} from "discord.js";
-import { Command } from "../utils/Command";
+import { CommandInteraction, SlashCommandBuilder } from "discord.js";
+import { Command } from "../entities/Command";
+import ResponseBuilder from "../entities/ResponseBuilder";
 
 export default class Commands extends Command {
   name = "commands";
@@ -17,20 +14,16 @@ export default class Commands extends Command {
     await interaction.deferReply();
     const commandList = this.client.commands;
 
-    const commandListEmbed = new EmbedBuilder()
-      .setColor(0x00ff00)
-      .setTitle("Command List");
+    const message = new ResponseBuilder().setTitle("Command List");
 
     commandList.each((command, name) => {
-      commandListEmbed.addFields({
+      message.addFields({
         name: `/${name}`,
         value: command.description,
         inline: false,
       });
     });
 
-    interaction.editReply({
-      embeds: [commandListEmbed],
-    });
+    this.handleReply(interaction, message);
   };
 }

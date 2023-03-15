@@ -1,5 +1,5 @@
 import "dotenv/config";
-import { Client } from "./utils/Client";
+import { Client } from "./entities/Client";
 
 // ENV variables
 const TOKEN = process.env.TOKEN;

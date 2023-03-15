@@ -1,8 +1,8 @@
 import { AudioPlayerStatus, entersState } from "@discordjs/voice";
 import { CommandInteraction, SlashCommandBuilder } from "discord.js";
-import { Track } from "../utils/Bot";
-import { PlayCommand } from "../utils/PlayCommand";
-import ResponseBuilder from "../utils/ResponseBuilder";
+import { PlayCommand } from "../entities/PlayCommand";
+import ResponseBuilder from "../entities/ResponseBuilder";
+import { Queue } from "../entities/Queue";
 
 export default class Restart extends PlayCommand {
   name = "restart";
@@ -16,45 +16,35 @@ export default class Restart extends PlayCommand {
     await interaction.deferReply();
 
     const guildId = interaction.guildId as string;
-    const activeQueue = this.client.activeQueueMap.get(guildId);
+    const queue = this.client.queueMap.get(guildId) as Queue;
+    const player = queue.getPlayer();
 
-    const response = new ResponseBuilder().setFailure();
+    const message = new ResponseBuilder();
 
-    if (!activeQueue) {
-      response.setDescription(
-        "No active queue found! Use /play or /switchq to start playing a queue.",
-      );
-      this.handleReply(interaction, response);
+    const tracks = queue.getTracks();
+
+    if (tracks.length === 0) {
+      message.setFailure().setDescription("The queue is empty!");
+      this.handleReply(interaction, message);
       return;
     }
 
-    const trackList = activeQueue.tracks;
-
-    if (trackList.length === 0) {
-      response.setDescription("The queue is empty!");
-      this.handleReply(interaction, response);
-      return;
-    }
-
-    if (activeQueue.player?.state.status === AudioPlayerStatus.Playing) {
+    if (player?.state.status === AudioPlayerStatus.Playing) {
       try {
-        activeQueue.player.pause();
-        await entersState(activeQueue.player, AudioPlayerStatus.Paused, 5_000);
-        activeQueue.isPlaying = false;
+        player.pause();
+        await entersState(player, AudioPlayerStatus.Paused, 5_000);
       } catch (error) {
-        response.setDescription("Error pausing the track. Aborting!");
-        this.handleReply(interaction, response);
+        message
+          .setFailure()
+          .setDescription("Error restarting the track. Aborting!");
+        this.handleReply(interaction, message);
         return;
       }
     }
 
-    const currentTrack = trackList.shift();
-    trackList.unshift(currentTrack as Track);
-
     this.playTrack(guildId);
 
-    response.setSuccess();
-    let reply = this.getNowPlayingInfo(trackList[0], response);
+    const reply = queue.getNowPlayingMessage();
     this.handleReply(interaction, reply);
   };
 }

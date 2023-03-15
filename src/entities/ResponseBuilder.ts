@@ -3,6 +3,7 @@ import { EmbedBuilder } from "discord.js";
 export default class ResponseBuilder extends EmbedBuilder {
   public constructor() {
     super();
+    this.setSuccess();
   }
 
   public setFailure(): this {
