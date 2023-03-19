@@ -33,7 +33,7 @@ export default class Pause extends Command {
     try {
       await entersState(player, AudioPlayerStatus.Paused, 5_000);
 
-      message.setDescription("Track **paused**!");
+      message.setDescription("Track **paused**! Use /resume to resume.");
       this.handleReply(interaction, message);
     } catch (error) {
       message.setFailure().setDescription("Unable to pause track!");
