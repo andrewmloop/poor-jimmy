@@ -13,12 +13,14 @@ import {
 import { Queue } from "./Queue";
 import { Command } from "./Command";
 import { commandIndex } from "../commands";
+import SpotifyWebApi from "spotify-web-api-node";
 
 export class Client extends DiscordClient {
   token: string;
   commands: Collection<string, Command>;
   // Map of guildId to active Queue
   queueMap: Map<string, Queue>;
+  spotifyClient: SpotifyWebApi;
 
   public constructor(token?: string) {
     super({
@@ -32,6 +34,14 @@ export class Client extends DiscordClient {
     this.token = token as string;
     this.commands = new Collection();
     this.queueMap = new Map();
+    this.spotifyClient = new SpotifyWebApi({
+      clientId: process.env.SPOTIFY_CLIENT_ID,
+      clientSecret: process.env.SPOTIFY_SECRET,
+    });
+
+    this.spotifyClient.clientCredentialsGrant().then((data) => {
+      this.spotifyClient.setAccessToken(data.body["access_token"]);
+    });
 
     // Load all commands
     for (let command of commandIndex) {
@@ -88,9 +98,9 @@ export class Client extends DiscordClient {
   ): Promise<void> {
     const commandData = commands.map((command) => command.data.toJSON());
     const rest = new REST({ version: "10" }).setToken(token);
-    const CLIENTID = process.env.CLIENTID as string;
+    const discordClientId = process.env.DISCORD_CLIENT_ID as string;
     try {
-      await rest.put(Routes.applicationCommands(CLIENTID), {
+      await rest.put(Routes.applicationCommands(discordClientId), {
         body: commandData,
       });
       console.log("Successfully deployed slash commands!");

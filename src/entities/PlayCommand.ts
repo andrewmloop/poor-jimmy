@@ -1,3 +1,4 @@
+import "dotenv/config";
 import { Guild, GuildMember, VoiceChannel } from "discord.js";
 import { Command } from "./Command";
 import { Track } from "./Track";
@@ -18,6 +19,7 @@ import {
 import { Client } from "./Client";
 import ResponseBuilder from "./ResponseBuilder";
 import ytdl from "ytdl-core";
+import ytSearch from "yt-search";
 
 export abstract class PlayCommand extends Command {
   public constructor(client: Client) {
@@ -30,8 +32,44 @@ export abstract class PlayCommand extends Command {
     member: GuildMember,
   ): Promise<ResponseBuilder> {
     const message = new ResponseBuilder();
+    let track: Track | Error;
 
-    const track = await this.fetchTrack(url, member);
+    if (this.isSpotifyURL(url)) {
+      // Fetch Spotify data
+      const trackId = this.getSpotifyTrackURL(url);
+      let trackName = "";
+      let trackArtist = "";
+
+      await this.client.spotifyClient
+        .getTrack(trackId)
+        .then((data) => {
+          trackName = data.body.name;
+          trackArtist = data.body.artists[0].name;
+        })
+        .catch((error) => {
+          console.log(error);
+          message.setFailure().setDescription("Error fetching Spotify track!");
+          return message;
+        });
+
+      // Search youtube with fetched track name and artist, grab the url for
+      // the first video found and then feed it to this.fetchTrack
+      let foundUrl = "";
+
+      await ytSearch(`${trackName} ${trackArtist}`)
+        .then((res) => {
+          foundUrl = res.videos[0].url;
+        })
+        .catch((error) => {
+          console.log(error);
+          message.setFailure().setDescription("Error searching youtube!");
+          return message;
+        });
+
+      track = await this.fetchTrack(foundUrl, member);
+    } else {
+      track = await this.fetchTrack(url, member);
+    }
 
     if (track instanceof Error) {
       return message.setFailure().setDescription(track.message);
@@ -249,5 +287,20 @@ export abstract class PlayCommand extends Command {
         return;
       }
     }, 300_000);
+  }
+
+  /**
+   * Checks whether the passed in url is an "open.spotify.com/track" url
+   */
+  private isSpotifyURL(url: string): boolean {
+    return url.includes("open.spotify.com/track");
+  }
+
+  /**
+   * Returns the track id from an "open.spotify.com/track" url
+   * TODO: Use a better regex
+   */
+  private getSpotifyTrackURL(url: string): string {
+    return url.replace(/.*(track\/)/, "").replace(/\?.*$/, "");
   }
 }
