@@ -14,6 +14,7 @@ import { Queue } from "./Queue";
 import { Command } from "./Command";
 import { commandIndex } from "../commands";
 import SpotifyWebApi from "spotify-web-api-node";
+import ResponseBuilder from "./ResponseBuilder";
 
 export class Client extends DiscordClient {
   token: string;
@@ -66,7 +67,10 @@ export class Client extends DiscordClient {
         // channel use commands
         const member = interaction.member as GuildMember;
         if (!member.voice.channel) {
-          interaction.reply("You are not in a voice channel!");
+          const reply = new ResponseBuilder()
+            .setFailure()
+            .setDescription("You are not in a voice channel!");
+          interaction.reply({ ephemeral: true, embeds: [reply] });
           return;
         }
 
