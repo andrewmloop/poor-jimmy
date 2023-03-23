@@ -35,36 +35,19 @@ export abstract class PlayCommand extends Command {
     let track: Track | Error;
 
     if (this.isSpotifyURL(url)) {
-      // Fetch Spotify data
-      const trackId = this.getSpotifyTrackURL(url);
-      let trackName = "";
-      let trackArtist = "";
+      const searchString = await this.getSpotifyTrackTitleAndArtist(url);
 
-      await this.client.spotifyClient
-        .getTrack(trackId)
-        .then((data) => {
-          trackName = data.body.name;
-          trackArtist = data.body.artists[0].name;
-        })
-        .catch((error) => {
-          console.log(error);
-          message.setFailure().setDescription("Error fetching Spotify track!");
-          return message;
-        });
+      if (searchString instanceof Error) {
+        message.setFailure().setDescription(searchString.message);
+        return message;
+      }
 
-      // Search youtube with fetched track name and artist, grab the url for
-      // the first video found and then feed it to this.fetchTrack
-      let foundUrl = "";
+      const foundUrl = await this.searchYoutube(searchString);
 
-      await ytSearch(`${trackName} ${trackArtist}`)
-        .then((res) => {
-          foundUrl = res.videos[0].url;
-        })
-        .catch((error) => {
-          console.log(error);
-          message.setFailure().setDescription("Error searching youtube!");
-          return message;
-        });
+      if (foundUrl instanceof Error) {
+        message.setFailure().setDescription(foundUrl.message);
+        return message;
+      }
 
       track = await this.fetchTrack(foundUrl, member);
     } else {
@@ -80,7 +63,6 @@ export abstract class PlayCommand extends Command {
 
     if (player?.state.status === AudioPlayerStatus.Idle) {
       await this.playTrack(guild.id);
-      return serverQueue.getNowPlayingMessage();
     }
 
     return message.setDescription(`**${track.title}** added to the queue!`);
@@ -94,14 +76,14 @@ export abstract class PlayCommand extends Command {
   protected addToQueue(track: Track, guild: Guild): Queue {
     const queue = this.client.queueMap.get(guild.id) as Queue;
 
-    queue.tracks.push(track);
+    queue.addTrack(track);
     return queue;
   }
 
   protected getAudioPlayer(guildId: string): AudioPlayer {
     const queue = this.client.queueMap.get(guildId);
 
-    return queue?.player as AudioPlayer;
+    return queue?.getPlayer() as AudioPlayer;
   }
 
   protected async fetchVideoInfo(url: string): Promise<ytdl.videoInfo> {
@@ -154,15 +136,19 @@ export abstract class PlayCommand extends Command {
 
     if (!serverQueue) return;
 
-    if (serverQueue.tracks.length === 0) {
+    if (serverQueue.getTracks().length === 0) {
       return this.handleEmptyQueue(guildId);
     }
 
-    const firstTrack = serverQueue.tracks[0];
+    const firstTrack = serverQueue.getTracks()[0];
     const connection = await this.connectToChannel(serverQueue.voiceChannel);
 
     serverQueue.player = await this.createAudioPlayer(firstTrack);
     connection.subscribe(serverQueue.player);
+
+    serverQueue.textChannel.send({
+      embeds: [serverQueue.getNowPlayingMessage()],
+    });
 
     serverQueue.player.on(AudioPlayerStatus.Idle, () => {
       this.handleTrackFinish(guildId);
@@ -302,5 +288,54 @@ export abstract class PlayCommand extends Command {
    */
   private getSpotifyTrackURL(url: string): string {
     return url.replace(/.*(track\/)/, "").replace(/\?.*$/, "");
+  }
+
+  /**
+   * Returns the track title and artist as "<title> artist" from
+   * given "open.spotify.com/track" url.
+   * Returns Error elsewise.
+   */
+  private async getSpotifyTrackTitleAndArtist(
+    url: string,
+  ): Promise<string | Error> {
+    const trackId = this.getSpotifyTrackURL(url);
+    let titleAndArtist = "";
+
+    await this.client.spotifyClient
+      .getTrack(trackId)
+      .then((data) => {
+        let title = data.body.name;
+        let artist = data.body.artists[0].name;
+        titleAndArtist = `${title} ${artist}`;
+      })
+      .catch((err) => {
+        console.log(err);
+        const error = new Error();
+        error.message = "Error fetching Spotify track!";
+        return error;
+      });
+
+    return titleAndArtist;
+  }
+
+  /**
+   * Searches for a Youtube video with the given search string and
+   * returns the URL. Returns Error elsewise.
+   */
+  private async searchYoutube(searchString: string): Promise<string | Error> {
+    let foundUrl = "";
+
+    await ytSearch(searchString)
+      .then((res) => {
+        foundUrl = res.videos[0].url;
+      })
+      .catch((err) => {
+        console.log(err);
+        const error = new Error();
+        error.message = "Error searching Youtube!";
+        return error;
+      });
+
+    return foundUrl;
   }
 }

@@ -45,7 +45,7 @@ export default class Skip extends PlayCommand {
         const reply = queue.getNowPlayingMessage();
         this.handleReply(interaction, reply);
       } else {
-        message.setDescription("The queue has ended");
+        message.setDescription("The queue has ended!");
         this.handleReply(interaction, message);
       }
     } catch (error) {
