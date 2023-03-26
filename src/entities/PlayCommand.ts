@@ -1,15 +1,8 @@
-import {
-  EmbedBuilder,
-  Events,
-  Guild,
-  GuildMember,
-  TextChannel,
-  VoiceChannel,
-} from "discord.js";
-import { Command } from "../utils/Command";
-import ytdl from "ytdl-core";
-import spdl from "spdl-core";
-import { Queue, Track } from "../utils/Bot";
+import "dotenv/config";
+import { Guild, GuildMember, VoiceChannel } from "discord.js";
+import { Command } from "./Command";
+import { Track } from "./Track";
+import { Queue } from "./Queue";
 import {
   AudioPlayer,
   AudioPlayerStatus,
@@ -25,6 +18,8 @@ import {
 } from "@discordjs/voice";
 import { Client } from "./Client";
 import ResponseBuilder from "./ResponseBuilder";
+import ytdl from "ytdl-core";
+import ytSearch from "yt-search";
 
 export abstract class PlayCommand extends Command {
   public constructor(client: Client) {
@@ -33,36 +28,44 @@ export abstract class PlayCommand extends Command {
 
   protected async play(
     url: string,
-    textChannel: TextChannel,
-    voiceChannel: VoiceChannel,
     guild: Guild,
     member: GuildMember,
-  ): Promise<EmbedBuilder> {
-    const messageEmbed = new EmbedBuilder().setColor(0xff0000);
-    const track = await this.fetchTrack(url, member);
+  ): Promise<ResponseBuilder> {
+    const message = new ResponseBuilder();
+    let track: Track | Error;
+
+    if (this.isSpotifyURL(url)) {
+      const searchString = await this.getSpotifyTrackTitleAndArtist(url);
+
+      if (searchString instanceof Error) {
+        message.setFailure().setDescription(searchString.message);
+        return message;
+      }
+
+      const foundUrl = await this.searchYoutube(searchString);
+
+      if (foundUrl instanceof Error) {
+        message.setFailure().setDescription(foundUrl.message);
+        return message;
+      }
+
+      track = await this.fetchTrack(foundUrl, member);
+    } else {
+      track = await this.fetchTrack(url, member);
+    }
+
     if (track instanceof Error) {
-      return messageEmbed.setDescription(track.message);
+      return message.setFailure().setDescription(track.message);
     }
 
-    const serverQueue = this.addToActiveQueue(
-      track,
-      guild,
-      voiceChannel,
-      textChannel,
-    );
+    const serverQueue = this.addToQueue(track, guild);
+    const player = serverQueue.player;
 
-    if (
-      !serverQueue.isPlaying &&
-      serverQueue.player?.state.status !== AudioPlayerStatus.Paused
-    ) {
+    if (player?.state.status === AudioPlayerStatus.Idle) {
       await this.playTrack(guild.id);
-      messageEmbed.setColor(0x00ff00);
-      return this.getNowPlayingInfo(track, messageEmbed);
     }
 
-    return messageEmbed
-      .setColor(0x00ff00)
-      .setDescription(`**${track.title}** added to the queue!`);
+    return message.setDescription(`**${track.title}** added to the queue!`);
   }
 
   /**
@@ -70,38 +73,17 @@ export abstract class PlayCommand extends Command {
    * to the end of it's track list. It creates a default queue if
    * an active queue is not found
    */
-  protected addToActiveQueue(
-    track: Track,
-    guild: Guild,
-    voiceChannel: VoiceChannel,
-    textChannel: TextChannel,
-  ): Queue {
-    let activeQueue = this.client.activeQueueMap.get(guild.id) as Queue;
+  protected addToQueue(track: Track, guild: Guild): Queue {
+    const queue = this.client.queueMap.get(guild.id) as Queue;
 
-    if (activeQueue === undefined) {
-      activeQueue = {
-        name: "Default",
-        voiceChannel: voiceChannel,
-        textChannel: textChannel,
-        tracks: [],
-        player: null,
-        playingMessage: null,
-        isPlaying: false,
-        isLoop: false,
-      };
-      this.client.activeQueueMap.set(guild.id, activeQueue);
-      this.client.addQueueToList(guild.id, activeQueue);
-    }
-
-    activeQueue.tracks.push(track);
-    return activeQueue;
+    queue.addTrack(track);
+    return queue;
   }
 
   protected getAudioPlayer(guildId: string): AudioPlayer {
-    const client: Client = this.client;
-    const activeQ = client.activeQueueMap.get(guildId);
+    const queue = this.client.queueMap.get(guildId);
 
-    return activeQ?.player as AudioPlayer;
+    return queue?.getPlayer() as AudioPlayer;
   }
 
   protected async fetchVideoInfo(url: string): Promise<ytdl.videoInfo> {
@@ -138,15 +120,7 @@ export abstract class PlayCommand extends Command {
         return this.handleError(`Could not find track!`);
       }
 
-      const duration = parseInt(trackInfo.videoDetails.lengthSeconds);
-      const track: Track = {
-        info: trackInfo,
-        title: trackInfo.videoDetails.title,
-        url: trackInfo.videoDetails.video_url,
-        duration: duration,
-        formattedDuration: this.formatDuration(duration),
-        requestedBy: member,
-      };
+      const track = new Track(trackInfo, member);
 
       return track;
     } else {
@@ -158,22 +132,25 @@ export abstract class PlayCommand extends Command {
    * Plays the first track in a guild's active queue.
    */
   protected async playTrack(guildId: string): Promise<void> {
-    const activeQueue = this.client.activeQueueMap.get(guildId);
+    const serverQueue = this.client.queueMap.get(guildId);
 
-    if (!activeQueue) return;
+    if (!serverQueue) return;
 
-    if (activeQueue.tracks.length === 0) {
+    if (serverQueue.getTracks().length === 0) {
       return this.handleEmptyQueue(guildId);
     }
 
-    const firstTrack = activeQueue.tracks[0];
-    const connection = await this.connectToChannel(activeQueue.voiceChannel);
-    activeQueue.player = await this.createAudioPlayer(firstTrack);
-    connection.subscribe(activeQueue.player);
-    activeQueue.isPlaying = true;
+    const firstTrack = serverQueue.getTracks()[0];
+    const connection = await this.connectToChannel(serverQueue.voiceChannel);
 
-    activeQueue.player.on(AudioPlayerStatus.Idle, () => {
-      activeQueue.isPlaying = false;
+    serverQueue.player = await this.createAudioPlayer(firstTrack);
+    connection.subscribe(serverQueue.player);
+
+    serverQueue.textChannel.send({
+      embeds: [serverQueue.getNowPlayingMessage()],
+    });
+
+    serverQueue.player.on(AudioPlayerStatus.Idle, () => {
       this.handleTrackFinish(guildId);
     });
   }
@@ -252,21 +229,21 @@ export abstract class PlayCommand extends Command {
    * and then play the next track
    */
   private handleTrackFinish(guildId: string): void {
-    const activeQueue = this.client.activeQueueMap.get(guildId) as Queue;
+    const serverQueue = this.client.queueMap.get(guildId) as Queue;
 
-    if (activeQueue !== null) {
-      const track = activeQueue.tracks[0];
-      if (activeQueue.isLoop) {
-        activeQueue.tracks.push(track);
+    if (serverQueue !== null) {
+      const track = serverQueue.tracks[0];
+      if (serverQueue.isLoop) {
+        serverQueue.tracks.push(track);
       }
-      activeQueue.tracks.shift();
+      serverQueue.tracks.shift();
 
-      if (activeQueue.tracks.length === 0) {
+      if (serverQueue.tracks.length === 0) {
         let response = new ResponseBuilder()
           .setSuccess()
           .setDescription("The queue has ended!");
 
-        activeQueue.textChannel.send({ embeds: [response] });
+        serverQueue.textChannel.send({ embeds: [response] });
       } else {
         this.playTrack(guildId);
       }
@@ -280,32 +257,85 @@ export abstract class PlayCommand extends Command {
    */
   private handleEmptyQueue(guildId: string): void {
     const connection = getVoiceConnection(guildId);
-    const activeQueue = this.client.activeQueueMap.get(guildId) as Queue;
+    const serverQueue = this.client.queueMap.get(guildId) as Queue;
 
     setTimeout(() => {
       if (
-        activeQueue.tracks.length === 0 ||
-        activeQueue.voiceChannel.members.size === 0
+        serverQueue.tracks.length === 0 ||
+        serverQueue.voiceChannel.members.size === 0
       ) {
+        const exitMessage = new ResponseBuilder().setDescription(
+          "No activity has been detected in the past 5 minutes. Poor Jimmy has left the channel.",
+        );
+        serverQueue.textChannel.send({ embeds: [exitMessage] });
         connection?.destroy();
-        this.client.activeQueueMap.delete(guildId);
-        this.client.queueListMap.delete(guildId);
+        this.client.queueMap.delete(guildId);
         return;
       }
     }, 300_000);
   }
 
   /**
-   * Takes in a number of seconds and formats it to a string
-   * for displaying a tracks duration
+   * Checks whether the passed in url is an "open.spotify.com/track" url
    */
-  protected formatDuration(seconds: number): string {
-    if (seconds === 0) return "livestream";
+  private isSpotifyURL(url: string): boolean {
+    return url.includes("open.spotify.com/track");
+  }
 
-    const date = new Date(seconds * 1000).toISOString();
-    const formatted =
-      seconds < 3600 ? date.substring(14, 19) : date.substring(12, 19);
+  /**
+   * Returns the track id from an "open.spotify.com/track" url
+   * TODO: Use a better regex
+   */
+  private getSpotifyTrackURL(url: string): string {
+    return url.replace(/.*(track\/)/, "").replace(/\?.*$/, "");
+  }
 
-    return `[${formatted}]`;
+  /**
+   * Returns the track title and artist as "<title> artist" from
+   * given "open.spotify.com/track" url.
+   * Returns Error elsewise.
+   */
+  private async getSpotifyTrackTitleAndArtist(
+    url: string,
+  ): Promise<string | Error> {
+    const trackId = this.getSpotifyTrackURL(url);
+    let titleAndArtist = "";
+
+    await this.client.spotifyClient
+      .getTrack(trackId)
+      .then((data) => {
+        let title = data.body.name;
+        let artist = data.body.artists[0].name;
+        titleAndArtist = `${title} ${artist}`;
+      })
+      .catch((err) => {
+        console.log(err);
+        const error = new Error();
+        error.message = "Error fetching Spotify track!";
+        return error;
+      });
+
+    return titleAndArtist;
+  }
+
+  /**
+   * Searches for a Youtube video with the given search string and
+   * returns the URL. Returns Error elsewise.
+   */
+  private async searchYoutube(searchString: string): Promise<string | Error> {
+    let foundUrl = "";
+
+    await ytSearch(searchString)
+      .then((res) => {
+        foundUrl = res.videos[0].url;
+      })
+      .catch((err) => {
+        console.log(err);
+        const error = new Error();
+        error.message = "Error searching Youtube!";
+        return error;
+      });
+
+    return foundUrl;
   }
 }

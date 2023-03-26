@@ -1,13 +1,11 @@
-import {
-  CommandInteraction,
-  EmbedBuilder,
-  SlashCommandBuilder,
-} from "discord.js";
-import { Command } from "../utils/Command";
+import { CommandInteraction, SlashCommandBuilder } from "discord.js";
+import { Command } from "../entities/Command";
+import { Queue } from "../entities/Queue";
+import ResponseBuilder from "../entities/ResponseBuilder";
 
 export default class Loop extends Command {
   name = "loop";
-  description = "Enables/disables looping on the active queue";
+  description = "Enables/disables looping the queue";
 
   data = new SlashCommandBuilder()
     .setName(this.name)
@@ -17,30 +15,22 @@ export default class Loop extends Command {
     await interaction.deferReply();
 
     const guildId = interaction.guildId as string;
-    const activeQueue = this.client.activeQueueMap.get(guildId);
+    const queue = this.client.queueMap.get(guildId) as Queue;
 
-    const messageEmbed = new EmbedBuilder().setColor(0xff0000);
+    const message = new ResponseBuilder();
 
-    if (!activeQueue) {
-      messageEmbed.setDescription(
-        "No active queue found! Use /play or /switchq to start playing a queue.",
+    queue.isLoop = !queue.isLoop;
+
+    if (queue.isLoop) {
+      message.setDescription(
+        "Queue looping **enabled**! Use this command again to disable it.",
       );
-      this.handleReply(interaction, messageEmbed);
-      return;
-    }
-
-    activeQueue.isLoop = !activeQueue.isLoop;
-
-    if (activeQueue.isLoop) {
-      messageEmbed
-        .setColor(0x00ff00)
-        .setDescription("Queue looping **enabled**!");
-      this.handleReply(interaction, messageEmbed);
+      this.handleReply(interaction, message);
     } else {
-      messageEmbed
-        .setColor(0x00ff00)
-        .setDescription("Queue looping **disabled**!");
-      this.handleReply(interaction, messageEmbed);
+      message.setDescription(
+        "Queue looping **disabled**! Use this command again to enable it",
+      );
+      this.handleReply(interaction, message);
     }
   };
 }

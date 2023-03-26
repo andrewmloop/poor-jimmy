@@ -1,9 +1,7 @@
-import {
-  CommandInteraction,
-  EmbedBuilder,
-  SlashCommandBuilder,
-} from "discord.js";
-import { Command } from "../utils/Command";
+import { CommandInteraction, SlashCommandBuilder } from "discord.js";
+import { Command } from "../entities/Command";
+import { Queue } from "../entities/Queue";
+import ResponseBuilder from "../entities/ResponseBuilder";
 
 export default class Remove extends Command {
   name = "remove";
@@ -25,46 +23,38 @@ export default class Remove extends Command {
     await interaction.deferReply();
 
     const guildId = interaction.guildId as string;
-    const activeQueue = this.client.activeQueueMap.get(guildId);
+    const queue = this.client.queueMap.get(guildId) as Queue;
 
-    const messageEmbed = new EmbedBuilder().setColor(0xff0000);
+    const message = new ResponseBuilder();
 
-    if (!activeQueue) {
-      messageEmbed.setDescription(
-        "No active queue found! Use /play or /switchq to start playing a queue.",
-      );
-      this.handleReply(interaction, messageEmbed);
-      return;
-    }
-
-    const tracks = activeQueue.tracks;
+    const tracks = queue.getTracks();
     const index = interaction.options.get("index")?.value as number;
 
     // Error handling for an empty queue and improper index input
     if (!tracks || tracks.length === 0) {
-      messageEmbed.setDescription("There are no tracks queued!");
-      this.handleReply(interaction, messageEmbed);
+      message.setFailure().setDescription("There are no tracks queued!");
+      this.handleReply(interaction, message);
       return;
     }
 
-    if (index < 0 && index > tracks.length - 1) {
-      messageEmbed.setDescription("Please choose an index in range!");
-      this.handleReply(interaction, messageEmbed);
+    if (index < 0 || index > tracks.length - 1) {
+      message.setFailure().setDescription("Please choose an index in range!");
+      this.handleReply(interaction, message);
       return;
     }
 
     if (index === 0) {
-      messageEmbed.setDescription("Use /skip to remove the current track");
-      this.handleReply(interaction, messageEmbed);
+      message
+        .setFailure()
+        .setDescription("Use /skip to remove the current track");
+      this.handleReply(interaction, message);
       return;
     }
 
     const removedSong = tracks.splice(index, 1)[0];
 
-    messageEmbed
-      .setColor(0x00ff00)
-      .setDescription(`Removed **${removedSong.title}**`);
+    message.setDescription(`Removed **${removedSong.title}**`);
 
-    this.handleReply(interaction, messageEmbed);
+    this.handleReply(interaction, message);
   };
 }

@@ -1,14 +1,12 @@
 import { AudioPlayerStatus, entersState } from "@discordjs/voice";
-import {
-  CommandInteraction,
-  EmbedBuilder,
-  SlashCommandBuilder,
-} from "discord.js";
-import { PlayCommand } from "../utils/PlayCommand";
+import { CommandInteraction, SlashCommandBuilder } from "discord.js";
+import { PlayCommand } from "../entities/PlayCommand";
+import ResponseBuilder from "../entities/ResponseBuilder";
+import { Queue } from "../entities/Queue";
 
 export default class Clear extends PlayCommand {
   name = "clear";
-  description = "Remove all tracks from the active queue";
+  description = "Remove all tracks from the queue";
 
   data = new SlashCommandBuilder()
     .setName(this.name)
@@ -18,42 +16,33 @@ export default class Clear extends PlayCommand {
     await interaction.deferReply();
 
     const guildId = interaction.guildId as string;
-    const activeQueue = this.client.activeQueueMap.get(guildId);
+    const queue = this.client.queueMap.get(guildId) as Queue;
 
-    const messageEmbed = new EmbedBuilder().setColor(0xff0000);
+    const message = new ResponseBuilder();
 
-    if (!activeQueue) {
-      messageEmbed.setDescription(
-        "No active queue found! Use /play or /switchq to start playing a queue.",
-      );
-      this.handleReply(interaction, messageEmbed);
+    if (queue.tracks.length === 0) {
+      message.setFailure().setDescription("The queue is already empty!");
+      this.handleReply(interaction, message);
       return;
     }
 
-    if (activeQueue.tracks.length === 0) {
-      messageEmbed.setDescription("The queue is already empty!");
-      this.handleReply(interaction, messageEmbed);
-      return;
-    }
-
-    if (activeQueue.player?.state.status === AudioPlayerStatus.Playing) {
+    if (queue.player?.state.status === AudioPlayerStatus.Playing) {
       try {
-        activeQueue.player.pause();
-        await entersState(activeQueue.player, AudioPlayerStatus.Paused, 5_000);
-        activeQueue.isPlaying = false;
+        queue.player.pause();
+        await entersState(queue.player, AudioPlayerStatus.Paused, 5_000);
       } catch (error) {
-        messageEmbed.setDescription("Error pausing the track. Aborting!");
-        this.handleReply(interaction, messageEmbed);
+        message
+          .setFailure()
+          .setDescription("Error pausing the track. Aborting!");
+        this.handleReply(interaction, message);
         return;
       }
     }
 
-    activeQueue.tracks = [];
+    queue.clearTracks();
 
-    messageEmbed
-      .setColor(0x00ff00)
-      .setDescription("The queue has been **cleared**");
+    message.setDescription("The queue has been **cleared**");
 
-    this.handleReply(interaction, messageEmbed);
+    this.handleReply(interaction, message);
   };
 }

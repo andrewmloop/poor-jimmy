@@ -1,9 +1,6 @@
-import {
-  CommandInteraction,
-  EmbedBuilder,
-  SlashCommandBuilder,
-} from "discord.js";
-import { Command } from "../utils/Command";
+import { CommandInteraction, SlashCommandBuilder } from "discord.js";
+import { Command } from "../entities/Command";
+import ResponseBuilder from "../entities/ResponseBuilder";
 
 export default class Ping extends Command {
   name = "ping";
@@ -16,11 +13,11 @@ export default class Ping extends Command {
   execute = async (interaction: CommandInteraction): Promise<void> => {
     await interaction.deferReply();
 
-    const messageEmbed = new EmbedBuilder()
-      .setColor(0x00ff00)
-      .setDescription(this.ping(interaction.createdTimestamp));
+    const message = new ResponseBuilder().setDescription(
+      this.ping(interaction.createdTimestamp),
+    );
 
-    this.handleReply(interaction, messageEmbed);
+    this.handleReply(interaction, message);
   };
 
   private ping(startTime: number): string {

@@ -1,10 +1,8 @@
-import { AudioPlayer, AudioPlayerStatus, entersState } from "@discordjs/voice";
-import {
-  CommandInteraction,
-  EmbedBuilder,
-  SlashCommandBuilder,
-} from "discord.js";
-import { Command } from "../utils/Command";
+import { AudioPlayerStatus, entersState } from "@discordjs/voice";
+import { CommandInteraction, SlashCommandBuilder } from "discord.js";
+import { Command } from "../entities/Command";
+import ResponseBuilder from "../entities/ResponseBuilder";
+import { Queue } from "../entities/Queue";
 
 export default class Pause extends Command {
   name = "pause";
@@ -18,37 +16,28 @@ export default class Pause extends Command {
     await interaction.deferReply();
 
     const guildId = interaction.guildId as string;
-    const activeQueue = this.client.activeQueueMap.get(guildId);
+    const queue = this.client.queueMap.get(guildId) as Queue;
+    const player = queue.getPlayer();
 
-    const messageEmbed = new EmbedBuilder().setColor(0xff0000);
+    const message = new ResponseBuilder();
 
-    if (!activeQueue) {
-      messageEmbed.setDescription(
-        "No active queue found! Use /play or /switchq to start playing a queue.",
-      );
-      this.handleReply(interaction, messageEmbed);
+    if (player.state.status === AudioPlayerStatus.Paused) {
+      message
+        .setFailure()
+        .setDescription("The current track is already paused!");
+      this.handleReply(interaction, message);
       return;
     }
 
-    if (activeQueue.isPlaying === false) {
-      messageEmbed.setDescription("The current track is already paused!");
-      this.handleReply(interaction, messageEmbed);
-      return;
-    }
-
-    const player = activeQueue.player as AudioPlayer;
     player.pause();
-
     try {
       await entersState(player, AudioPlayerStatus.Paused, 5_000);
 
-      activeQueue.isPlaying = false;
-
-      messageEmbed.setColor(0x00ff00).setDescription("Track **paused**!");
-      this.handleReply(interaction, messageEmbed);
+      message.setDescription("Track **paused**! Use /resume to resume.");
+      this.handleReply(interaction, message);
     } catch (error) {
-      messageEmbed.setDescription("Unable to pause track!");
-      this.handleReply(interaction, messageEmbed);
+      message.setFailure().setDescription("Unable to pause track!");
+      this.handleReply(interaction, message);
       return;
     }
   };

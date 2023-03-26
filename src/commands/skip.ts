@@ -1,7 +1,8 @@
 import { AudioPlayerStatus, entersState } from "@discordjs/voice";
 import { CommandInteraction, SlashCommandBuilder } from "discord.js";
-import { PlayCommand } from "../utils/PlayCommand";
-import ResponseBuilder from "../utils/ResponseBuilder";
+import { PlayCommand } from "../entities/PlayCommand";
+import ResponseBuilder from "../entities/ResponseBuilder";
+import { Queue } from "../entities/Queue";
 
 export default class Skip extends PlayCommand {
   name = "skip";
@@ -15,31 +16,23 @@ export default class Skip extends PlayCommand {
     await interaction.deferReply();
 
     const guildId = interaction.guildId as string;
-    const activeQueue = this.client.activeQueueMap.get(guildId);
-    const player = this.getAudioPlayer(guildId);
+    const queue = this.client.queueMap.get(guildId) as Queue;
+    const player = queue.getPlayer();
 
-    const response = new ResponseBuilder().setFailure();
+    const message = new ResponseBuilder();
 
-    if (!activeQueue) {
-      response.setDescription(
-        "No active queue found! Use /play or /switchq to start playing a queue.",
-      );
-      this.handleReply(interaction, response);
-      return;
-    }
-
-    const tracks = activeQueue.tracks;
+    const tracks = queue.getTracks();
 
     if (!tracks || tracks.length === 0) {
-      response.setDescription("There is nothing to skip!");
-      this.handleReply(interaction, response);
+      message.setFailure().setDescription("There is nothing to skip!");
+      this.handleReply(interaction, message);
       return;
     }
 
-    const current = tracks[0];
+    const currentTrack = tracks[0];
 
-    if (activeQueue.isLoop) {
-      tracks.push(current);
+    if (queue.isLoop) {
+      tracks.push(currentTrack);
     }
     tracks.shift();
 
@@ -47,19 +40,17 @@ export default class Skip extends PlayCommand {
       player.pause();
       await entersState(player, AudioPlayerStatus.Paused, 5_000);
 
-      response.setSuccess();
-
       if (tracks.length > 0) {
         this.playTrack(guildId);
-        let reply = this.getNowPlayingInfo(tracks[0], response);
+        const reply = queue.getNowPlayingMessage();
         this.handleReply(interaction, reply);
       } else {
-        response.setDescription("The queue has ended");
-        this.handleReply(interaction, response);
+        message.setDescription("The queue has ended!");
+        this.handleReply(interaction, message);
       }
     } catch (error) {
-      response.setDescription("Error skipping track!");
-      this.handleReply(interaction, response);
+      message.setFailure().setDescription("Error skipping track!");
+      this.handleReply(interaction, message);
     }
   };
 }

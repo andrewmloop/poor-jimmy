@@ -1,10 +1,7 @@
-import {
-  CommandInteraction,
-  EmbedBuilder,
-  SlashCommandBuilder,
-} from "discord.js";
-import { Track } from "../utils/Bot";
-import { PlayCommand } from "../utils/PlayCommand";
+import { CommandInteraction, SlashCommandBuilder } from "discord.js";
+import { PlayCommand } from "../entities/PlayCommand";
+import ResponseBuilder from "../entities/ResponseBuilder";
+import { Queue } from "../entities/Queue";
 
 export default class NowPlaying extends PlayCommand {
   name = "nowplaying";
@@ -18,27 +15,18 @@ export default class NowPlaying extends PlayCommand {
     await interaction.deferReply();
 
     const guildId = interaction.guildId as string;
-    const activeQueue = this.client.activeQueueMap.get(guildId);
+    const queue = this.client.queueMap.get(guildId) as Queue;
 
-    const messageEmbed = new EmbedBuilder().setColor(0xff0000);
+    const message = new ResponseBuilder();
 
-    if (!activeQueue) {
-      messageEmbed.setDescription(
-        "No active queue found! Use /play or /switchq to start playing a queue.",
-      );
-      this.handleReply(interaction, messageEmbed);
-      return;
-    }
-
-    const track = activeQueue.tracks[0];
+    const track = queue.getTracks()[0];
 
     if (track) {
-      messageEmbed.setColor(0x00ff00);
-      const reply = this.getNowPlayingInfo(track, messageEmbed);
+      const reply = queue.getNowPlayingMessage();
       this.handleReply(interaction, reply);
     } else {
-      messageEmbed.setDescription("No track playing!");
-      this.handleReply(interaction, messageEmbed);
+      message.setFailure().setDescription("No track playing!");
+      this.handleReply(interaction, message);
     }
   };
 }

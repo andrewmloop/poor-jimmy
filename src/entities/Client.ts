@@ -7,18 +7,21 @@ import {
   GuildMember,
   REST,
   Routes,
+  TextChannel,
+  VoiceChannel,
 } from "discord.js";
-import { Queue } from "./Bot";
+import { Queue } from "./Queue";
 import { Command } from "./Command";
 import { commandIndex } from "../commands";
+import SpotifyWebApi from "spotify-web-api-node";
+import ResponseBuilder from "./ResponseBuilder";
 
 export class Client extends DiscordClient {
   token: string;
   commands: Collection<string, Command>;
-  // Map of guildId to created Queue Array
-  queueListMap: Map<string, Queue[]>;
   // Map of guildId to active Queue
-  activeQueueMap: Map<string, Queue>;
+  queueMap: Map<string, Queue>;
+  spotifyClient: SpotifyWebApi;
 
   public constructor(token?: string) {
     super({
@@ -31,8 +34,15 @@ export class Client extends DiscordClient {
     });
     this.token = token as string;
     this.commands = new Collection();
-    this.queueListMap = new Map();
-    this.activeQueueMap = new Map();
+    this.queueMap = new Map();
+    this.spotifyClient = new SpotifyWebApi({
+      clientId: process.env.SPOTIFY_CLIENT_ID,
+      clientSecret: process.env.SPOTIFY_SECRET,
+    });
+
+    this.spotifyClient.clientCredentialsGrant().then((data) => {
+      this.spotifyClient.setAccessToken(data.body["access_token"]);
+    });
 
     // Load all commands
     for (let command of commandIndex) {
@@ -53,18 +63,25 @@ export class Client extends DiscordClient {
       async (interaction: CommandInteraction) => {
         if (!interaction.isCommand()) return;
 
-        // Add guildId to queueListMap if not present
-        const guildId = interaction.guildId as string;
-        if (this.queueListMap.get(guildId) === undefined) {
-          this.queueListMap.set(guildId, []);
-        }
-
         // Don't let a member that is not in a voice
         // channel use commands
         const member = interaction.member as GuildMember;
         if (!member.voice.channel) {
-          interaction.reply("You are not in a voice channel!");
+          const reply = new ResponseBuilder()
+            .setFailure()
+            .setDescription("You are not in a voice channel!");
+          interaction.reply({ ephemeral: true, embeds: [reply] });
           return;
+        }
+
+        // Create a queue for the guild if one doesn't
+        // exist already
+        const guildId = interaction.guildId as string;
+        const textChannel = interaction.channel as TextChannel;
+        const voiceChannel = member.voice.channel as VoiceChannel;
+
+        if (this.queueMap.get(guildId) === undefined) {
+          this.queueMap.set(guildId, new Queue(voiceChannel, textChannel));
         }
 
         try {
@@ -85,25 +102,14 @@ export class Client extends DiscordClient {
   ): Promise<void> {
     const commandData = commands.map((command) => command.data.toJSON());
     const rest = new REST({ version: "10" }).setToken(token);
-    const CLIENTID = process.env.CLIENTID as string;
+    const discordClientId = process.env.DISCORD_CLIENT_ID as string;
     try {
-      await rest.put(Routes.applicationCommands(CLIENTID), {
+      await rest.put(Routes.applicationCommands(discordClientId), {
         body: commandData,
       });
       console.log("Successfully deployed slash commands!");
     } catch (error) {
       console.log(error);
-    }
-  }
-
-  addQueueToList(guildId: string, queue: Queue): void {
-    const queueList = this.queueListMap.get(guildId);
-
-    if (queueList) {
-      queueList.push(queue);
-    } else {
-      const initList: Queue[] = [queue];
-      this.queueListMap.set(guildId, initList);
     }
   }
 }
