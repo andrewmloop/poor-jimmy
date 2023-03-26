@@ -303,10 +303,27 @@ export abstract class PlayCommand extends Command {
 
     await this.client.spotifyClient
       .getTrack(trackId)
-      .then((data) => {
-        let title = data.body.name;
-        let artist = data.body.artists[0].name;
-        titleAndArtist = `${title} ${artist}`;
+      .then(async (data) => {
+        if (data.statusCode == 401 && data.headers.error === "invalid_token") {
+          await this.client.grantSpotifyAccess();
+          this.client.spotifyClient
+            .getTrack(trackId)
+            .then((data) => {
+              let title = data.body.name;
+              let artist = data.body.artists[0].name;
+              titleAndArtist = `${title} ${artist}`;
+            })
+            .catch((err) => {
+              console.log(err);
+              const error = new Error();
+              error.message = "Error fetching Spotify track!";
+              return error;
+            });
+        } else {
+          let title = data.body.name;
+          let artist = data.body.artists[0].name;
+          titleAndArtist = `${title} ${artist}`;
+        }
       })
       .catch((err) => {
         console.log(err);
