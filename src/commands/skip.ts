@@ -42,8 +42,8 @@ export default class Skip extends PlayCommand {
 
       if (tracks.length > 0) {
         this.playTrack(guildId);
-        const reply = queue.getNowPlayingMessage();
-        this.handleReply(interaction, reply);
+        message.setDescription("Track **skipped**!");
+        this.handleReply(interaction, message);
       } else {
         message.setDescription("The queue has ended!");
         this.handleReply(interaction, message);

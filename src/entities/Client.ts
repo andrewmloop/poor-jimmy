@@ -40,9 +40,7 @@ export class Client extends DiscordClient {
       clientSecret: process.env.SPOTIFY_SECRET,
     });
 
-    this.spotifyClient.clientCredentialsGrant().then((data) => {
-      this.spotifyClient.setAccessToken(data.body["access_token"]);
-    });
+    this.grantSpotifyAccess();
 
     // Load all commands
     for (let command of commandIndex) {
@@ -111,5 +109,11 @@ export class Client extends DiscordClient {
     } catch (error) {
       console.log(error);
     }
+  }
+
+  public async grantSpotifyAccess(): Promise<void> {
+    this.spotifyClient.clientCredentialsGrant().then((data) => {
+      this.spotifyClient.setAccessToken(data.body["access_token"]);
+    });
   }
 }

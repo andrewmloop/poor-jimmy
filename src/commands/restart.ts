@@ -44,7 +44,7 @@ export default class Restart extends PlayCommand {
 
     this.playTrack(guildId);
 
-    const reply = queue.getNowPlayingMessage();
-    this.handleReply(interaction, reply);
+    message.setDescription("Track **restarted**!");
+    this.handleReply(interaction, message);
   };
 }
