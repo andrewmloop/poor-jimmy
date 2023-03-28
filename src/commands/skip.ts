@@ -37,8 +37,8 @@ export default class Skip extends PlayCommand {
     tracks.shift();
 
     try {
-      player.pause();
-      await entersState(player, AudioPlayerStatus.Paused, 5_000);
+      player.stop();
+      await entersState(player, AudioPlayerStatus.Idle, 5_000);
 
       if (tracks.length > 0) {
         this.playTrack(guildId);

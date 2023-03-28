@@ -28,8 +28,8 @@ export default class Clear extends PlayCommand {
 
     if (queue.player?.state.status === AudioPlayerStatus.Playing) {
       try {
-        queue.player.pause();
-        await entersState(queue.player, AudioPlayerStatus.Paused, 5_000);
+        queue.player.stop();
+        await entersState(queue.player, AudioPlayerStatus.Idle, 5_000);
       } catch (error) {
         message
           .setFailure()

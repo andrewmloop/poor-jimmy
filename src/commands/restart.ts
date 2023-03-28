@@ -31,8 +31,8 @@ export default class Restart extends PlayCommand {
 
     if (player?.state.status === AudioPlayerStatus.Playing) {
       try {
-        player.pause();
-        await entersState(player, AudioPlayerStatus.Paused, 5_000);
+        player.stop();
+        await entersState(player, AudioPlayerStatus.Idle, 5_000);
       } catch (error) {
         message
           .setFailure()
