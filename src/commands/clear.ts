@@ -1,4 +1,4 @@
-import { AudioPlayerStatus, entersState } from "@discordjs/voice";
+import { AudioPlayer, AudioPlayerStatus, entersState } from "@discordjs/voice";
 import { CommandInteraction, SlashCommandBuilder } from "discord.js";
 import { PlayCommand } from "../entities/PlayCommand";
 import ResponseBuilder from "../entities/ResponseBuilder";
@@ -26,11 +26,19 @@ export default class Clear extends PlayCommand {
       return;
     }
 
-    if (queue.player?.state.status === AudioPlayerStatus.Playing) {
+    queue.clearTracks();
+
+    const player = queue.getPlayer() as AudioPlayer;
+
+    if (
+      player.state.status === AudioPlayerStatus.Playing ||
+      player.state.status === AudioPlayerStatus.Paused
+    ) {
       try {
-        queue.player.stop();
-        await entersState(queue.player, AudioPlayerStatus.Idle, 5_000);
+        player.stop();
+        await entersState(player, AudioPlayerStatus.Idle, 5_000);
       } catch (error) {
+        console.log(error);
         message
           .setFailure()
           .setDescription("Error pausing the track. Aborting!");
@@ -38,8 +46,6 @@ export default class Clear extends PlayCommand {
         return;
       }
     }
-
-    queue.clearTracks();
 
     message.setDescription("The queue has been **cleared**");
 
