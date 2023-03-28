@@ -9,7 +9,6 @@ import {
   createAudioPlayer,
   createAudioResource,
   entersState,
-  getVoiceConnection,
   joinVoiceChannel,
   StreamType,
   VoiceConnection,
@@ -140,7 +139,7 @@ export abstract class PlayCommand extends Command {
     if (!serverQueue) return;
 
     if (serverQueue.getTracks().length === 0) {
-      return; // this.handleEmptyQueue(guildId);
+      return;
     }
 
     const firstTrack = serverQueue.getTracks()[0];
@@ -256,31 +255,6 @@ export abstract class PlayCommand extends Command {
       }
     }
   }
-
-  /**
-   * Checks if the active queue is empty or if there are no
-   * members in the voice chat every 5 minutes. If so, sends a message
-   * and disconnects.
-   */
-  // private handleEmptyQueue(guildId: string): void {
-  //   const connection = getVoiceConnection(guildId);
-  //   const serverQueue = this.client.queueMap.get(guildId) as Queue;
-
-  //   setTimeout(() => {
-  //     if (
-  //       serverQueue.tracks.length === 0 ||
-  //       serverQueue.voiceChannel.members.size === 0
-  //     ) {
-  //       const exitMessage = new ResponseBuilder().setDescription(
-  //         "No activity has been detected in the past 5 minutes. Poor Jimmy has left the channel.",
-  //       );
-  //       serverQueue.textChannel.send({ embeds: [exitMessage] });
-  //       connection?.destroy();
-  //       this.client.queueMap.delete(guildId);
-  //       return;
-  //     }
-  //   }, 300_000);
-  // }
 
   /**
    * Checks whether the passed in url is an "open.spotify.com/track" url
