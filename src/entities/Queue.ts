@@ -47,6 +47,10 @@ export class Queue implements Queue {
     this.tracks.push(track);
   }
 
+  public removeFirstTrack(): void {
+    this.tracks.shift();
+  }
+
   public clearTracks(): void {
     this.tracks = [];
   }

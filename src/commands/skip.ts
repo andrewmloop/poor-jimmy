@@ -29,25 +29,16 @@ export default class Skip extends PlayCommand {
       return;
     }
 
-    const currentTrack = tracks[0];
-
-    if (queue.isLoop) {
-      tracks.push(currentTrack);
-    }
-    tracks.shift();
-
+    // Stopping the player and putting it into and Idle state
+    // fires the "handleTrackFinish" behavior set when the track
+    // was first created. This behavior removes the current track
+    // from the queue and pushes it to the end if looping is enabled.
+    // The next track in the queue is then started.
     try {
-      player.pause();
-      await entersState(player, AudioPlayerStatus.Paused, 5_000);
-
-      if (tracks.length > 0) {
-        this.playTrack(guildId);
-        message.setDescription("Track **skipped**!");
-        this.handleReply(interaction, message);
-      } else {
-        message.setDescription("The queue has ended!");
-        this.handleReply(interaction, message);
-      }
+      player.stop();
+      await entersState(player, AudioPlayerStatus.Idle, 5_000);
+      message.setDescription("Track **skipped**!");
+      this.handleReply(interaction, message);
     } catch (error) {
       message.setFailure().setDescription("Error skipping track!");
       this.handleReply(interaction, message);

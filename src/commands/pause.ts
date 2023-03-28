@@ -29,11 +29,13 @@ export default class Pause extends Command {
       return;
     }
 
-    player.pause();
     try {
+      player.pause();
       await entersState(player, AudioPlayerStatus.Paused, 5_000);
 
-      message.setDescription("Track **paused**! Use /resume to resume.");
+      message.setDescription(
+        "Track **paused**! Use /resume to continue playback.",
+      );
       this.handleReply(interaction, message);
     } catch (error) {
       message.setFailure().setDescription("Unable to pause track!");
