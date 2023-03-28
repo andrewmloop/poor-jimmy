@@ -13,7 +13,6 @@ import {
 import { Queue } from "./Queue";
 import { Command } from "./Command";
 import { commandIndex } from "../commands";
-import SpotifyWebApi from "spotify-web-api-node";
 import ResponseBuilder from "./ResponseBuilder";
 
 export class Client extends DiscordClient {
@@ -21,7 +20,6 @@ export class Client extends DiscordClient {
   commands: Collection<string, Command>;
   // Map of guildId to active Queue
   queueMap: Map<string, Queue>;
-  spotifyClient: SpotifyWebApi;
 
   public constructor(token?: string) {
     super({
@@ -35,12 +33,6 @@ export class Client extends DiscordClient {
     this.token = token as string;
     this.commands = new Collection();
     this.queueMap = new Map();
-    this.spotifyClient = new SpotifyWebApi({
-      clientId: process.env.SPOTIFY_CLIENT_ID,
-      clientSecret: process.env.SPOTIFY_SECRET,
-    });
-
-    this.grantSpotifyAccess();
 
     // Load all commands
     for (let command of commandIndex) {
@@ -109,11 +101,5 @@ export class Client extends DiscordClient {
     } catch (error) {
       console.log(error);
     }
-  }
-
-  public async grantSpotifyAccess(): Promise<void> {
-    this.spotifyClient.clientCredentialsGrant().then((data) => {
-      this.spotifyClient.setAccessToken(data.body["access_token"]);
-    });
   }
 }

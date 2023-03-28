@@ -20,6 +20,7 @@ import { Client } from "./Client";
 import ResponseBuilder from "./ResponseBuilder";
 import ytdl from "ytdl-core";
 import ytSearch from "yt-search";
+import { SpotifyClient } from "./SpotifyClient";
 
 export abstract class PlayCommand extends Command {
   public constructor(client: Client) {
@@ -35,7 +36,9 @@ export abstract class PlayCommand extends Command {
     let track: Track | Error;
 
     if (this.isSpotifyURL(url)) {
-      const searchString = await this.getSpotifyTrackTitleAndArtist(url);
+      const spotifyApi = new SpotifyClient();
+      await spotifyApi.grantSpotifyAPIAccess();
+      const searchString = await spotifyApi.getSpotifyTrackTitleAndArtist(url);
 
       if (searchString instanceof Error) {
         message.setFailure().setDescription(searchString.message);
@@ -137,7 +140,7 @@ export abstract class PlayCommand extends Command {
     if (!serverQueue) return;
 
     if (serverQueue.getTracks().length === 0) {
-      return this.handleEmptyQueue(guildId);
+      return; // this.handleEmptyQueue(guildId);
     }
 
     const firstTrack = serverQueue.getTracks()[0];
@@ -230,18 +233,22 @@ export abstract class PlayCommand extends Command {
    */
   private handleTrackFinish(guildId: string): void {
     const serverQueue = this.client.queueMap.get(guildId) as Queue;
+    const tracks = serverQueue.getTracks();
 
     if (serverQueue !== null) {
-      const track = serverQueue.tracks[0];
-      if (serverQueue.isLoop) {
-        serverQueue.tracks.push(track);
+      if (tracks.length === 0) {
+        return;
       }
-      serverQueue.tracks.shift();
+      const currentTrack = tracks[0];
+      if (serverQueue.isLoop) {
+        serverQueue.addTrack(currentTrack);
+      }
+      serverQueue.removeFirstTrack();
 
-      if (serverQueue.tracks.length === 0) {
-        let response = new ResponseBuilder()
-          .setSuccess()
-          .setDescription("The queue has ended!");
+      if (serverQueue.getTracks().length === 0) {
+        let response = new ResponseBuilder().setDescription(
+          "The queue has ended!",
+        );
 
         serverQueue.textChannel.send({ embeds: [response] });
       } else {
@@ -255,84 +262,31 @@ export abstract class PlayCommand extends Command {
    * members in the voice chat every 5 minutes. If so, sends a message
    * and disconnects.
    */
-  private handleEmptyQueue(guildId: string): void {
-    const connection = getVoiceConnection(guildId);
-    const serverQueue = this.client.queueMap.get(guildId) as Queue;
+  // private handleEmptyQueue(guildId: string): void {
+  //   const connection = getVoiceConnection(guildId);
+  //   const serverQueue = this.client.queueMap.get(guildId) as Queue;
 
-    setTimeout(() => {
-      if (
-        serverQueue.tracks.length === 0 ||
-        serverQueue.voiceChannel.members.size === 0
-      ) {
-        const exitMessage = new ResponseBuilder().setDescription(
-          "No activity has been detected in the past 5 minutes. Poor Jimmy has left the channel.",
-        );
-        serverQueue.textChannel.send({ embeds: [exitMessage] });
-        connection?.destroy();
-        this.client.queueMap.delete(guildId);
-        return;
-      }
-    }, 300_000);
-  }
+  //   setTimeout(() => {
+  //     if (
+  //       serverQueue.tracks.length === 0 ||
+  //       serverQueue.voiceChannel.members.size === 0
+  //     ) {
+  //       const exitMessage = new ResponseBuilder().setDescription(
+  //         "No activity has been detected in the past 5 minutes. Poor Jimmy has left the channel.",
+  //       );
+  //       serverQueue.textChannel.send({ embeds: [exitMessage] });
+  //       connection?.destroy();
+  //       this.client.queueMap.delete(guildId);
+  //       return;
+  //     }
+  //   }, 300_000);
+  // }
 
   /**
    * Checks whether the passed in url is an "open.spotify.com/track" url
    */
   private isSpotifyURL(url: string): boolean {
     return url.includes("open.spotify.com/track");
-  }
-
-  /**
-   * Returns the track id from an "open.spotify.com/track" url
-   * TODO: Use a better regex
-   */
-  private getSpotifyTrackURL(url: string): string {
-    return url.replace(/.*(track\/)/, "").replace(/\?.*$/, "");
-  }
-
-  /**
-   * Returns the track title and artist as "<title> artist" from
-   * given "open.spotify.com/track" url.
-   * Returns Error elsewise.
-   */
-  private async getSpotifyTrackTitleAndArtist(
-    url: string,
-  ): Promise<string | Error> {
-    const trackId = this.getSpotifyTrackURL(url);
-    let titleAndArtist = "";
-
-    await this.client.spotifyClient
-      .getTrack(trackId)
-      .then(async (data) => {
-        if (data.statusCode == 401 && data.headers.error === "invalid_token") {
-          await this.client.grantSpotifyAccess();
-          this.client.spotifyClient
-            .getTrack(trackId)
-            .then((data) => {
-              let title = data.body.name;
-              let artist = data.body.artists[0].name;
-              titleAndArtist = `${title} ${artist}`;
-            })
-            .catch((err) => {
-              console.log(err);
-              const error = new Error();
-              error.message = "Error fetching Spotify track!";
-              return error;
-            });
-        } else {
-          let title = data.body.name;
-          let artist = data.body.artists[0].name;
-          titleAndArtist = `${title} ${artist}`;
-        }
-      })
-      .catch((err) => {
-        console.log(err);
-        const error = new Error();
-        error.message = "Error fetching Spotify track!";
-        return error;
-      });
-
-    return titleAndArtist;
   }
 
   /**
