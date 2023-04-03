@@ -35,7 +35,7 @@ export default class Clear extends PlayCommand {
       player.state.status === AudioPlayerStatus.Paused
     ) {
       try {
-        player.stop();
+        player.stop(true);
         await entersState(player, AudioPlayerStatus.Idle, 5_000);
       } catch (error) {
         console.log(error);

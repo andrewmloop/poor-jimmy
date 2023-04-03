@@ -35,7 +35,7 @@ export default class Skip extends PlayCommand {
     // from the queue and pushes it to the end if looping is enabled.
     // The next track in the queue is then started.
     try {
-      player.stop();
+      player.stop(true);
       await entersState(player, AudioPlayerStatus.Idle, 5_000);
       message.setDescription("Track **skipped**!");
       this.handleReply(interaction, message);
