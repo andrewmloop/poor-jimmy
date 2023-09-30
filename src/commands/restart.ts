@@ -10,7 +10,7 @@ import { Queue } from "../entities/Queue";
 
 export default class Restart extends PlayCommand {
   name = "restart";
-  description = "Restarts the currently playing track";
+  description = "Restart the currently playing track";
 
   data = new SlashCommandBuilder()
     .setName(this.name)

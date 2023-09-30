@@ -6,7 +6,7 @@ import { Queue } from "../entities/Queue";
 
 export default class Resume extends Command {
   name = "resume";
-  description = "Resume the current track";
+  description = "Resume the currently paused track";
 
   data = new SlashCommandBuilder()
     .setName(this.name)

@@ -5,7 +5,7 @@ import ResponseBuilder from "../entities/ResponseBuilder";
 
 export default class List extends Command {
   name = "list";
-  description = "List the queue's tracks";
+  description = "Display the queue's tracks";
 
   data = new SlashCommandBuilder()
     .setName(this.name)

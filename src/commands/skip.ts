@@ -6,7 +6,7 @@ import { Queue } from "../entities/Queue";
 
 export default class Skip extends PlayCommand {
   name = "skip";
-  description = "Skips the current track";
+  description = "Skip the current track";
 
   data = new SlashCommandBuilder()
     .setName(this.name)

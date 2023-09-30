@@ -4,7 +4,7 @@ import ResponseBuilder from "../entities/ResponseBuilder";
 
 export default class Commands extends Command {
   name = "commands";
-  description = "Displays a list of all the bot's commands";
+  description = "Display a list of Poor Jimmy's commands";
 
   data = new SlashCommandBuilder()
     .setName(this.name)
