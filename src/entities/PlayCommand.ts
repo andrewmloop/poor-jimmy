@@ -139,6 +139,12 @@ export abstract class PlayCommand extends Command {
 
     if (!queue || queue.getTracks().length === 0) return;
 
+    // Clear out the timeout function if one exists
+    if (this.client.timeOutMap.has(guildId)) {
+      clearTimeout(this.client.timeOutMap.get(guildId));
+      this.client.timeOutMap.delete(guildId);
+    }
+
     const firstTrack = queue.getTracks()[0];
     const connection = await this.connectToChannel(queue.voiceChannel);
 
@@ -241,20 +247,30 @@ export abstract class PlayCommand extends Command {
 
     queue.removeFirstTrack();
 
-    // Destroy the existing voice connection. A new connection is made
-    // when a new track plays
-    const currentVoiceConnection = getVoiceConnection(guildId);
-    if (currentVoiceConnection) {
-      currentVoiceConnection.destroy();
-    }
-
     if (queue.getTracks().length === 0) {
-      let response = new ResponseBuilder().setDescription(
+      const endQueueMessage = new ResponseBuilder().setDescription(
         "The queue has ended!",
       );
 
-      queue.textChannel.send({ embeds: [response] });
+      queue.textChannel.send({ embeds: [endQueueMessage] });
+
+      // We don't want the bot to leave the guild immediately when the
+      // queue ends. Create a timeout function and save it on the client. If
+      // another track is played, it will clear the timeout function.
+      const leaveServerTimeOut = setTimeout(() => {
+        const leaveServerMessage = new ResponseBuilder().setDescription(
+          "Queue has been empty for 5 minutes. Nap time for Poor Jimmy.",
+        );
+
+        queue.textChannel.send({ embeds: [leaveServerMessage] });
+
+        this.destroyVoiceChannel(guildId);
+      }, 300_000);
+
+      this.client.timeOutMap.set(guildId, leaveServerTimeOut);
     } else {
+      this.destroyVoiceChannel(guildId);
+
       this.playTrack(guildId);
     }
   }
@@ -285,5 +301,19 @@ export abstract class PlayCommand extends Command {
       });
 
     return foundUrl;
+  }
+
+  /**
+   * Destroy a guild's voice connection. A new connection is made when a new
+   * track is played. This prevents memory leaks.
+   *
+   * @param guildId The guild's id
+   */
+  protected destroyVoiceChannel(guildId: string): void {
+    const currentVoiceConnection = getVoiceConnection(guildId);
+
+    if (currentVoiceConnection) {
+      currentVoiceConnection.destroy();
+    }
   }
 }

@@ -1,4 +1,4 @@
-import { AudioPlayer, AudioPlayerStatus, entersState } from "@discordjs/voice";
+import { AudioPlayerStatus, entersState } from "@discordjs/voice";
 import { CommandInteraction, SlashCommandBuilder } from "discord.js";
 import { PlayCommand } from "../entities/PlayCommand";
 import ResponseBuilder from "../entities/ResponseBuilder";
@@ -6,7 +6,7 @@ import { Queue } from "../entities/Queue";
 
 export default class Clear extends PlayCommand {
   name = "clear";
-  description = "Remove all tracks from the queue";
+  description = "Remove all tracks from the queue and put Poor Jimmy to sleep";
 
   data = new SlashCommandBuilder()
     .setName(this.name)
@@ -28,7 +28,7 @@ export default class Clear extends PlayCommand {
 
     queue.clearTracks();
 
-    const player = queue.getPlayer() as AudioPlayer;
+    const player = queue.getPlayer();
 
     if (
       player.state.status === AudioPlayerStatus.Playing ||
@@ -50,5 +50,6 @@ export default class Clear extends PlayCommand {
     message.setDescription("The queue has been **cleared**");
 
     this.handleReply(interaction, message);
+    this.destroyVoiceChannel(guildId);
   };
 }

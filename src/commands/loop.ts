@@ -5,7 +5,7 @@ import ResponseBuilder from "../entities/ResponseBuilder";
 
 export default class Loop extends Command {
   name = "loop";
-  description = "Enables/disables looping the queue";
+  description = "Enable/disable looping the queue";
 
   data = new SlashCommandBuilder()
     .setName(this.name)

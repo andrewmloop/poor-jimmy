@@ -5,7 +5,7 @@ import ResponseBuilder from "../entities/ResponseBuilder";
 
 export default class Remove extends Command {
   name = "remove";
-  description = "Remove a track from the active queue";
+  description = "Remove a track from the queue";
 
   data = new SlashCommandBuilder()
     .setName(this.name)
