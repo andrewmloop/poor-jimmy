@@ -2,8 +2,8 @@ import "dotenv/config";
 import { Client } from "./entities/Client";
 
 // ENV variables
-const discordToken = process.env.DISCORD_TOKEN;
+const DISCORD_TOKEN = process.env.DISCORD_TOKEN as string;
 
-const client = new Client(discordToken);
+const client = new Client(DISCORD_TOKEN);
 
-client.login(discordToken);
+client.login(DISCORD_TOKEN);

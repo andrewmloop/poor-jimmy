@@ -2,6 +2,7 @@
   "name": "poor-jimmy",
   "version": "1.0.0",
   "description": "A Discord bot to manage music.",
+  "private": true,
   "main": "app.js",
   "scripts": {
     "prestart": "npm run build",

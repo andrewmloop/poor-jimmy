@@ -9,6 +9,7 @@ import {
   createAudioPlayer,
   createAudioResource,
   entersState,
+  getVoiceConnection,
   joinVoiceChannel,
   StreamType,
   VoiceConnection,
@@ -61,7 +62,7 @@ export abstract class PlayCommand extends Command {
     }
 
     const serverQueue = this.addToQueue(track, guild);
-    const player = serverQueue.player;
+    const player = serverQueue.getPlayer();
 
     if (player?.state.status === AudioPlayerStatus.Idle) {
       await this.playTrack(guild.id);
@@ -134,25 +135,21 @@ export abstract class PlayCommand extends Command {
    * Plays the first track in a guild's active queue.
    */
   protected async playTrack(guildId: string): Promise<void> {
-    const serverQueue = this.client.queueMap.get(guildId);
+    const queue = this.client.queueMap.get(guildId);
 
-    if (!serverQueue) return;
+    if (!queue || queue.getTracks().length === 0) return;
 
-    if (serverQueue.getTracks().length === 0) {
-      return;
-    }
+    const firstTrack = queue.getTracks()[0];
+    const connection = await this.connectToChannel(queue.voiceChannel);
 
-    const firstTrack = serverQueue.getTracks()[0];
-    const connection = await this.connectToChannel(serverQueue.voiceChannel);
+    queue.player = await this.createAudioPlayer(firstTrack);
+    connection.subscribe(queue.player);
 
-    serverQueue.player = await this.createAudioPlayer(firstTrack);
-    connection.subscribe(serverQueue.player);
-
-    serverQueue.textChannel.send({
-      embeds: [serverQueue.getNowPlayingMessage()],
+    queue.textChannel.send({
+      embeds: [queue.getNowPlayingMessage()],
     });
 
-    serverQueue.player.on(AudioPlayerStatus.Idle, () => {
+    queue.player.on(AudioPlayerStatus.Idle, () => {
       this.handleTrackFinish(guildId);
     });
   }
@@ -231,28 +228,34 @@ export abstract class PlayCommand extends Command {
    * and then play the next track
    */
   private handleTrackFinish(guildId: string): void {
-    const serverQueue = this.client.queueMap.get(guildId) as Queue;
-    const tracks = serverQueue.getTracks();
+    const queue = this.client.queueMap.get(guildId) as Queue;
 
-    if (serverQueue !== null) {
-      if (tracks.length === 0) {
-        return;
-      }
-      const currentTrack = tracks[0];
-      if (serverQueue.isLoop) {
-        serverQueue.addTrack(currentTrack);
-      }
-      serverQueue.removeFirstTrack();
+    if (!queue || queue.getTracks().length === 0) return;
 
-      if (serverQueue.getTracks().length === 0) {
-        let response = new ResponseBuilder().setDescription(
-          "The queue has ended!",
-        );
+    const tracks = queue.getTracks();
+    const currentTrack = tracks[0];
 
-        serverQueue.textChannel.send({ embeds: [response] });
-      } else {
-        this.playTrack(guildId);
-      }
+    if (queue.isLoop) {
+      queue.addTrack(currentTrack);
+    }
+
+    queue.removeFirstTrack();
+
+    // Destroy the existing voice connection. A new connection is made
+    // when a new track plays
+    const currentVoiceConnection = getVoiceConnection(guildId);
+    if (currentVoiceConnection) {
+      currentVoiceConnection.destroy();
+    }
+
+    if (queue.getTracks().length === 0) {
+      let response = new ResponseBuilder().setDescription(
+        "The queue has ended!",
+      );
+
+      queue.textChannel.send({ embeds: [response] });
+    } else {
+      this.playTrack(guildId);
     }
   }
 

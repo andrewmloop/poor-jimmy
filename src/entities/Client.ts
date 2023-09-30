@@ -21,7 +21,7 @@ export class Client extends DiscordClient {
   // Map of guildId to active Queue
   queueMap: Map<string, Queue>;
 
-  public constructor(token?: string) {
+  public constructor(token: string) {
     super({
       intents: [
         GatewayIntentBits.Guilds,
@@ -30,22 +30,22 @@ export class Client extends DiscordClient {
         GatewayIntentBits.MessageContent,
       ],
     });
-    this.token = token as string;
+    this.token = token;
     this.commands = new Collection();
     this.queueMap = new Map();
 
-    // Load all commands
+    // Load all slash commands
     for (let command of commandIndex) {
       const commandObject = new command(this);
       this.commands.set(commandObject.name, commandObject);
     }
 
+    // Register all slash commands globally to be used in any guild
     this.deployCommands(this.commands, this.token);
 
-    this.once("ready", () => {
-      console.log(
-        "Ready as: " + this.user?.username + "#" + this.user?.discriminator,
-      );
+    // Add listeners
+    this.once(Events.ClientReady, () => {
+      console.log(`Ready! Logged in as ${this.user?.tag}`);
     });
 
     this.addListener(

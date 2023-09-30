@@ -1,4 +1,8 @@
-import { AudioPlayerStatus, entersState } from "@discordjs/voice";
+import {
+  AudioPlayerStatus,
+  entersState,
+  getVoiceConnection,
+} from "@discordjs/voice";
 import { CommandInteraction, SlashCommandBuilder } from "discord.js";
 import { PlayCommand } from "../entities/PlayCommand";
 import ResponseBuilder from "../entities/ResponseBuilder";
@@ -40,6 +44,13 @@ export default class Restart extends PlayCommand {
         this.handleReply(interaction, message);
         return;
       }
+    }
+
+    // Destroy the existing voice connection. A new connection is made
+    // when a new track plays
+    const currentVoiceConnection = getVoiceConnection(guildId);
+    if (currentVoiceConnection) {
+      currentVoiceConnection.destroy();
     }
 
     this.playTrack(guildId);

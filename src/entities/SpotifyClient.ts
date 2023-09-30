@@ -12,7 +12,7 @@ export class SpotifyClient {
   }
 
   /**
-   * Returns the track title and artist as "<title> artist" from
+   * Returns the track title and artist as "<title> <artist>" from
    * given "open.spotify.com/track" url.
    * Returns Error elsewise.
    */
@@ -31,9 +31,7 @@ export class SpotifyClient {
       })
       .catch((err) => {
         console.log(err);
-        const error = new Error();
-        error.message = "Error fetching Spotify track!";
-        return error;
+        return new Error("Error fetching Spotify track!");
       });
 
     return titleAndArtist;
