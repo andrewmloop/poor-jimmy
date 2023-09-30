@@ -18,8 +18,10 @@ import ResponseBuilder from "./ResponseBuilder";
 export class Client extends DiscordClient {
   token: string;
   commands: Collection<string, Command>;
-  // Map of guildId to active Queue
+  // Map of guildId to Queue
   queueMap: Map<string, Queue>;
+  // Map of guildId to Timeout
+  timeOutMap: Map<string, NodeJS.Timeout>;
 
   public constructor(token: string) {
     super({
@@ -33,6 +35,7 @@ export class Client extends DiscordClient {
     this.token = token;
     this.commands = new Collection();
     this.queueMap = new Map();
+    this.timeOutMap = new Map();
 
     // Load all slash commands
     for (let command of commandIndex) {
