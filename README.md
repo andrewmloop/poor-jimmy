@@ -11,6 +11,3 @@ This is a Discord bot built with TypeScript to play music in Discord voice chann
 - Pause, resume, skip, and stop functionality
 - Queue system for managing multiple songs
 - Play Spotify "/track" URLs via Youtube search
-
-## License
-This project is licensed under the [MIT License](LICENSE).
